@@ -1,4 +1,25 @@
-# ECE 473: Fed decision markets vs fed funds futures
+# ECE 473: Constant-Maturity Event Futures
+
+Palmer Mann, Jay Crowther, Ariel Perczek. Start with `CLAUDE.md` (repo map, owners, working rules),
+then `docs/decisions/`, `docs/TASKS.md` and `docs/log/`.
+
+**Product.** A fully collateralized futures contract that pays $100 x CUT90 at expiry. CUT90 is the
+market's probability of a net Fed cut within the next 90 days, built by blending the Kalshi ladder
+contracts for the two FOMC meetings around the 90-day mark (like the VIX blends two option expiries).
+HIKE90 is the same for hikes. Definition: `docs/decisions/003-index-definition-and-interface.md`.
+
+| Part | Folder | Status |
+|---|---|---|
+| Milestone 1: index, tracking backtest, draft contract | `index_m1/`, `docs/reports/milestone1/` | frozen; `cd index_m1 && python build_index.py && python make_figures.py` rebuilds every Milestone 1 number |
+| Data layer: Kalshi / Polymarket / futures, stale rule, fees, liquidity | `src/`, `tests/`, `results/summary.md` | this README below |
+| Final: index on the `src/` panel, futures pricing and backtest | `index/`, `docs/spec.md`, `docs/theory.md` | in progress, see `docs/TASKS.md` |
+
+The two parts currently use different cleaning rules and sample starts; decision 002 settles which one
+the final report uses.
+
+---
+
+# Data layer: Fed decision markets vs fed funds futures
 
 Daily, meeting-level comparison of what Kalshi, Polymarket and the futures market price for each
 FOMC decision, Feb 2023 onward, with a stale-price rule so thin markets don't pollute the comparison.

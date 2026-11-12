@@ -18,3 +18,6 @@ __pycache__/
 venv/
 .ipynb_checkpoints/
 .DS_Store
+
+# Milestone 1 daily panel: 17 MB, identical parquet is committed
+index_m1/data/kalshi_daily.csv
