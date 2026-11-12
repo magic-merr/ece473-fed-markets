@@ -1,6 +1,9 @@
 # 002: One cleaning rule and one sample for the final report
 Status: proposed (needs Ari and Jay to accept by Friday 11/13)
 Date / who: 2026-11-12, Palmer
+Accepted by: Jay 2026-11-12, conclusion only. The "Why" below is superseded by decision 005: the tail
+correction argument does not hold for CUT90's legs, and decision 005 gives the reasons that do, adds a
+settlement variant of the rule, and keeps points 1 to 3 unchanged. Read 005 with this file.
 
 The two codebases clean prices differently, so every Milestone 1 number moves if the index is rebuilt on
 the repo panel:

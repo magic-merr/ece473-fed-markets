@@ -1,6 +1,10 @@
 # 004: Announcement days stay in the sample
 Status: proposed
 Date / who: 2026-11-12, Palmer
+Accepted by: Jay 2026-11-12, no changes. The expiry rule referred to below is rewritten in `docs/spec.md`
+section 4, because the Milestone 1 version never fires for a Wednesday decision before a Friday expiry.
+That strengthens this decision rather than replacing it: keeping decisions out of the settlement window
+limits settlement risk, and the index still re-anchors on the path, which is what this decision is about.
 
 Decision: Report every backtest statistic on all days, with announcement days shown as a separate row,
 never silently excluded.

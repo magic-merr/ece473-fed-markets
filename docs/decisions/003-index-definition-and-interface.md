@@ -1,6 +1,7 @@
 # 003: Index definition and the file interface between data, index and futures code
 Status: accepted (definition unchanged from Milestone 1); interface proposed
 Date / who: 2026-11-12, Palmer
+Accepted by: Jay 2026-11-12, definition and interface, no changes. Ari: see `index/` (built to this format).
 
 Definition (as implemented in `index_m1/build_index.py`, Milestone 1 report section 3):
 - U_t = upper bound in effect at t. Y_m(K, t) = YES price of meeting m's "upper bound above K" contract.
