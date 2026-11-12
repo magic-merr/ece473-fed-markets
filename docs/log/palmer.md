@@ -33,3 +33,29 @@ Open issues:
   Ari should make this the headline result.
 
 Next: tasks 2 to 4 in TASKS.md.
+
+## 2026-11-12 19:45  main
+Did:
+- Decision 006 (`src/settlement_check.py`, `results/settlement_rule_check.md`): answers Jay's 005 point 3
+  (TASK 19). Agree that wide-book last trades should not settle; propose the wide-book mid instead of dropping
+  those days. Also reconciles TASK 17 and checks the spec section 4 expiry rule against Ari's backtest.
+- Reset adjustment and dealer break-even (`src/reset_check.py`, `results/reset_adjustment.md`,
+  `docs/notes/reset_adjustment.md`), input for Jay's TASK 14 and Ari's results.
+- TASK 4 leg liquidity (`src/leg_liquidity.py`, `results/leg_liquidity.md`).
+- TASK 16 fee check against live Kalshi /series. TASKS 2 and 3 closed. Final report outline in
+  `docs/reports/final/outline.md`.
+- None of Ari's or Jay's files changed. All three scripts import Ari's `index/` code read-only.
+Results (numbers worth keeping):
+- Trade-branch legs on two-sided books (from Feb 2023): 7,011 leg-days, median spread 25c, median gap to mid
+  9.5c. The mid predicts the next tight quote better (MAE 8.4c vs 9.9c, closer 57% of the time).
+- Dropping trade-branch days from settlement: CUT90 windows with < 5 valid days 21% -> 45%, < 3 valid 9% -> 24%.
+  Wide-book mid: no change in coverage, S moves on 21% of CUT90 trades by at most $3.28.
+- Spec expiry rule: the rate-move RMSE rises for CUT90 (23.5 -> 26.2) and falls for HIKE90 (18.0 -> 16.5).
+- Reset: dealer gains +$23.75 (CUT90) when the Fed moves the index's way and -$2.61 against. The ex-ante
+  p_dir x G fits CUT (22.3 predicted vs 24.6 realized gain) and overstates HIKE (39.5 vs 24.4).
+- Dealer break-even before any futures spread: CUT90 mean net -$4.40, negative on 90% of trades.
+- Far leg: 90d is 113 days out, 5c median spread, traded on 30% of days, 12% stale. 60d: 83 days, 3c, 39%, 9%.
+- Fees: FED quadratic and KXFED quadratic_with_maker_fees, multiplier 1 on both.
+Open issues:
+- 006 needs Ari and Jay. If accepted: TASK 23 (stale.py), then Ari's rerun with TASK 18.
+Next: my report sections 3 and 8; edit on Monday.
