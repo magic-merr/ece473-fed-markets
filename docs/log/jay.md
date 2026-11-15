@@ -94,3 +94,26 @@ Open issues:
 
 Next: J4 once Ari messages that A4 is pushed, then J5 from `numbers.md`, then a review pass on sections 1, 4
 and 5 Monday morning.
+
+## 2026-11-15 18:00  main
+Did:
+- J4: reran `theory/noarb.py` at `fb94863`. Every number reproduces; `theory/README.md` unchanged.
+- `docs/spec.md`: closed R1, R4 and R6. Section 5.1 now states the rule exactly as the code applies it (wide-book
+  mid only where a trade printed within 3 days; last trade also when the book has not been quoted in 3 days;
+  tail fill as step 5). Numbers updated to the final run (45 expiries, 11 of 45, 23% of CUT90 trades and 35 of
+  178 settlements below five valid days) and cited by `numbers.md` key. Edits drafted by Palmer's session from
+  the code and `numbers.md`; reviewed and applied by Jay.
+Checked before applying, rather than taking the patch on trust:
+- `src/stale.py` line 72 and 80: the trade branch does require `trade_age <= 3`, so R1's wording is right that
+  the wide-book mid only replaces a price where a trade printed within three days.
+- `stale.tail_filled`: it fills only where `price` is NaN, so the tail fill really is a last resort and belongs
+  at step 5 rather than earlier in the hierarchy.
+- Recomputed the final calendar independently: 45 expiries, first 2023-02-24, last 2026-10-23, and 11 of them
+  have a decision inside a 10-day extension, every one at exactly 9 days. Matches R5 and R6.
+- `theory/noarb.py` rerun at this commit: output byte-identical, so J4 is a confirmation and `theory/README.md`
+  needed no change.
+
+Results (numbers worth keeping): none new.
+Open issues: none on the spec. 48 `{{numbers.md: key}}` placeholders remain in `theory.md` (23) and sections 1,
+4 and 5 (5, 5, 15); `docs/spec.md` has none left.
+Next: J5 (fill the placeholders), then review Monday.
