@@ -10,6 +10,7 @@ python build.py      # index -> processed/index_daily.csv (H=90), processed/inde
 python futures.py    # backtest -> results/futures_*.csv, results/futures_backtest.md, processed/futures_trades.csv
 python figures.py    # results/fig_hedge_error.png, results/fig_hedge_cost.png, results/fig_index_series.png
 python event_study.py  # results/event_study.md (run after futures.py)
+python examples.py   # results/worked_examples.md: the index on 2024-01-11, the 2024-12-18 reset, one trade
 python -m pytest tests -q
 ```
 
@@ -20,7 +21,8 @@ python -m pytest tests -q
 | `futures.py` | Expiry calendar, settlement procedure, static hedge, hedge error, trading cost, capital, fair value, robustness rows. |
 | `figures.py` | The three figures. |
 | `event_study.py` | Index change on each FOMC decision day, by decision, next to the futures hedge errors. |
-| `tests/test_futures.py` | 22 tests: hand-calculated synthetic cases, every settlement fallback branch, the `final` rule against `src/settlement_check.py::wide_mid_days`, the spec calendar against `expiries_no_decision`, exact reproduction of the Milestone 1 index and of the 11/12 tables (`tests/ref_1112/`), and an independent recomputation of real trades. |
+| `examples.py` | Worked examples for report sections 2 and 7, from the same code as the index and the backtest. |
+| `tests/test_futures.py` | 23 tests: hand-calculated synthetic cases, every settlement fallback branch, the `final` rule against `src/settlement_check.py::wide_mid_days`, the spec calendar against `expiries_no_decision`, exact reproduction of the Milestone 1 index and of the 11/12 tables (`tests/ref_1112/`), and an independent recomputation of real trades. |
 
 ## Definitions
 
@@ -72,6 +74,17 @@ seven entry leads: 7, 14, 21, 30, 45, 60 and 90 calendar days before expiry. Tha
 HIKE90, CUT60 and HIKE60. The old calendar had 44 expiries over the same months; the spec calendar moves 5 of them
 back a week and adds 2026-10-23 (2026-10-30 moved back into the data). Trades with leads above about 30 days overlap
 across expiries, so they are not independent.
+
+## Worked examples (`results/worked_examples.md`, from `examples.py`)
+
+- **The index on 2024-01-11.** The upper bound is 5.50%, so the cut legs are "above 5.25" contracts. Day 90 is
+  2024-04-10, halfway between the 2024-03-20 and 2024-05-01 meetings, so w = 21/42 = 0.5. The March contract's
+  YES price is 0.605 (bid 0.59, ask 0.62) and the May contract's 0.195, so the cut probabilities are 39.5% and
+  80.5% and CUT90 = 0.5 x 39.5 + 0.5 x 80.5 = 60.0. HIKE90 the same day is 2.0.
+- **The reset on 2024-12-18.** The Fed cut from 4.75% to 4.50%. CUT90 went from 89.41 to 39.40, a fall of 50.01
+  points. Measured at the old strike, the index would have been 95.08 on the decision day, so 55.68 points of the
+  fall is the re-anchoring to the new upper bound and the rest, +5.67, is news.
+- **One trade.** The CUT90 future expiring 2024-12-27, sold and hedged on 2024-11-27, in result 2 below.
 
 ## Results (pre-freeze)
 
@@ -209,6 +222,5 @@ are the days when the book had widened (decision 006).
    result; the rule is justified by definition (decision 007).
 3. The spec fallback settles every expiry. Across the four indices, 143 of 178 expiry settlements used the full
    window, 17 used three or four valid days, 9 the extension and 9 the deferral; the backstop never fired.
-4. The backtest now follows spec section 5 as written: S rounded to 0.25 (R2 closed) and the extension stopping at
-   the day after the decision (R3 closed). Requests R1 and R4 stay open: spec 5.1 should describe the wide-book mid
-   as the code applies it and add the tail fill, which decision 007 includes.
+4. The backtest follows spec section 5 as written: S rounded to 0.25 (R2) and the extension stopping at the day
+   after the decision (R3). Spec 5.1 now states the price rule exactly as the code applies it (R1, R4).

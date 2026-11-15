@@ -358,3 +358,16 @@ def test_event_study():
     r = ev[ev["decision_date"] == D(2024, 12, 18)].iloc[0]           # 25bp cut
     assert r["CUT90_change"] == pytest.approx(100 * (s[D(2024, 12, 18)] - s[D(2024, 12, 17)]))
     assert r["CUT90_change"] < -40
+
+
+def test_worked_examples():
+    """Section 2 and 7 examples: hand checks of the index day and the reset identity."""
+    import examples as EX
+    book = legs.book("final")
+    d = dict((k, v) for _, k, v in EX.index_day(book))
+    assert d["w"] == 0.5 and d["target_date_T"] == D(2024, 4, 10)                  # 21 of 42 days
+    assert d["CUT90_leg1_probability"] == pytest.approx(1 - d["CUT90_leg1_yes_price"])
+    assert d["CUT90_points"] == pytest.approx(100 * (0.5 * (1 - 0.605) + 0.5 * (1 - 0.195)))
+    r = dict((k, v) for _, k, v in EX.reset(book))
+    assert r["change_points"] == pytest.approx(r["reset_points"] + r["belief_change_points"])
+    assert r["upper_bound_after_pct"] == r["upper_bound_before_pct"] - 0.25 and r["reset_points"] < -40

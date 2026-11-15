@@ -22,8 +22,9 @@ Natural hedge (static; docs/notes/futures_pricing.md)
   the next valid day, else the last valid one.
   Usually two contracts in total, three when the window straddles a bracket roll.
   Fair value F0 = what the hedge costs at the index's own prices on day t.
-  If the upper bound does not change between t and expiry, the hedge holds exactly what the index prices,
-  so hedge proceeds = settlement identically (up to the fallback reallocation). A meeting at which the Fed
+  If the upper bound does not change between t and expiry and all five window days are valid, the hedge holds
+  exactly what the index prices, so hedge proceeds = the unrounded settlement mean identically; rounding S to
+  0.25 adds at most 0.125, and fallback windows add a small reallocation error. A meeting at which the Fed
   holds changes nothing. A rate change moves the index to a new strike while the hedge keeps the old one.
 
 Measures (dollars per $100 contract = index points)

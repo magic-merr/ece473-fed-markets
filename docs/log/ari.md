@@ -93,3 +93,27 @@ Open issues:
 - R1 and R4 for Jay. R2 and R3 closed by this change. R5 accepted by Palmer.
 Next: no more code changes before the 11pm tag unless Palmer or Jay find a problem. A7 on Monday.
 
+## 2026-11-15 17:57  main
+Did:
+- Full audit of the repo at `1e72257` before the tag (Ari's request). Clean clone: 58 tests pass; `index/`
+  (build, futures, figures, event study), `theory/noarb.py`, `src/` settlement_check, reset_check,
+  leg_liquidity, decomposition and report_numbers, and `index_m1/` all reproduce the committed files exactly
+  (only commit hashes in two headers differ, from the shallow clone). Every `numbers.md` value reproduces and
+  each index-related key matches its source.
+- New `index/examples.py` -> `index/results/worked_examples.md` and `.csv`: the worked examples sections 2 and 7
+  need, which `numbers.md` did not have. One test (23 index tests, 59 in all). README: worked-examples section,
+  R1/R4 note updated. `futures.py` docstring updated for rounding (no output changes; all results byte-identical).
+- Requests R8 to R14 (Jay: listing rule vs its reasoning, the 11-of-45 list, section 4.4 out of date, rounding in
+  the replication claim, the HIKE explanation, the section 1 break-even, wording) and R15, R16 (Palmer: worked
+  example keys in `numbers.md`, outline fixes).
+Results (numbers worth keeping, pre-freeze):
+- Index on 2024-01-11: w 0.5, cut legs 39.5% and 80.5%, CUT90 60.0, HIKE90 2.0.
+- Reset on 2024-12-18: CUT90 89.41 to 39.40 (-50.01); at the old strike 95.08, so reset -55.68 and news +5.67.
+- HIKE90 G by meeting (with-index trades): 2026-09-16 predicted $47.77 vs realized $6.65 (9 trades); 2023-05-03
+  $55.20 vs $21.54; 2023-03-22 $10.38 vs $20.20; 2023-07-26 $35.64 vs $44.09.
+- Decomposition index change 3.43 vs first-to-last 3.41: the chain starts from the day before the sample start
+  (2.476), so it is consistent. No action.
+Open issues:
+- R8 to R14 (Jay), R15 and R16 (Palmer). R7 (Palmer, from Jay) is mine for section 7. Freeze declared at `1e72257`.
+Next: A7 on Monday from `numbers.md` (after R15).
+
