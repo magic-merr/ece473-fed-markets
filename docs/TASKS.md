@@ -22,9 +22,9 @@ because their Claude session will not see it until they pull.
 
 | ID | Task | Done when | Due | Status |
 |---|---|---|---|---|
-| P1 | Push the setup commit: decision 007, this sprint table, CLAUDE.md sprint rules, `docs/reports/final/sections/README.md` | on `main` | Sun 5pm | open |
-| P2 | Message Ari and Jay: pull, push local work, read and sign 007 | both signed in 007 | Sun 6pm | open |
-| P3 | `src/decomposition.py` -> `results/decomposition.md` (old TASK 7, moved from Ari). Split the CUT90 and HIKE90 index change into belief change, roll-down on ordinary days, bracket rolls and announcement resets, as in `docs/log/palmer.md` 11/12, on the final index from 2023-02-02, with the Milestone 1 sample as a comparison row. Imports `index/` read-only. Start on current code, rerun after A4 | table committed after A4 | Sun 10:30pm | open |
+| P1 | Push the setup commit: decision 007, this sprint table, CLAUDE.md sprint rules, `docs/reports/final/sections/README.md` | on `main` | Sun 5pm | done 11/15, `6e9c565` |
+| P2 | Message Ari and Jay: pull, push local work, read and sign 007 | both signed in 007 | Sun 6pm | Ari signed (`5bc03a1`); Jay pending |
+| P3 | `src/decomposition.py` -> `results/decomposition.md` (old TASK 7, moved from Ari). Split the CUT90 and HIKE90 index change into belief change, roll-down on ordinary days, bracket rolls and announcement resets, as in `docs/log/palmer.md` 11/12, on the final index from 2023-02-02, with the Milestone 1 sample as a comparison row. Imports `index/` read-only. Start on current code, rerun after A4 | table committed after A4 | Sun 10:30pm | script, tests and pre-A4 table pushed (`src` rule); rerun after A4 |
 | P4 | After A4: rerun `src/settlement_check.py`, `src/reset_check.py` (dealer break-even, by-direction reset), `src/leg_liquidity.py`. Commit `results/*.md`. Check they agree with `index/results/` | committed | Sun 10:30pm | open |
 | P5 | `docs/reports/final/numbers.md`: every number the report cites, one line each, with source file. Replaces the "Headline numbers" list in the outline | committed | Sun 11pm | open |
 | P6 | Tag `results-final` once A4, A5, A6, J4, P3, P4 are done. Update the README status table | tag pushed | Sun 11pm | open |
@@ -63,7 +63,7 @@ because their Claude session will not see it until they pull.
 | R2 | Ari | Jay | 007 F2. Spec section 5 rounds S to the nearest 0.25; 007 and A3 do not, so the backtest does not round. Drop the rounding or say it is untested (it would add up to $0.125 of hedge error) | open |
 | R3 | Ari | Jay | 007 F3. Spec section 5 says the 10-day extension never reaches a decision "because section 4 keeps decisions out of the window". Not so: 11 of 45 final-calendar expiries have a decision exactly 9 days before expiry, the first day the extension can reach. The backtest counts the decision day (its close is after the announcement) and never goes earlier, so the guard never binds. Please fix the reasoning | open |
 | R4 | Ari | Jay | 007 F4. The tail fill is part of the 007 rule but not of spec section 5's source hierarchy ("carried forward up to three days", "no fourth branch"). 437 of 7,192 index-leg days from 2023-02-02 carry a pinned price beyond 3 days. Please add it as a branch | open |
-| R5 | Ari | Palmer | 007 F5. The final expiry calendar has 45 expiries, not 44: 2026-10-30 moves back to 2026-10-23, inside the data (your `settlement_check.py` already has 45). "5 of 44 move" is still right for the old calendar. `numbers.md` should give 45 for the final sample | open |
+| R5 | Ari | Palmer | 007 F5. The final expiry calendar has 45 expiries, not 44: 2026-10-30 moves back to 2026-10-23, inside the data (your `settlement_check.py` already has 45). "5 of 44 move" is still right for the old calendar. `numbers.md` should give 45 for the final sample | accepted by Palmer 11/15: confirmed 45 (5 of 44 old-calendar expiries move, and 2026-10-30 moves to 2026-10-23, inside the data). Goes into `numbers.md` (P5) |
 
 ---
 
