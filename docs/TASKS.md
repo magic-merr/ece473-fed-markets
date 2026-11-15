@@ -23,7 +23,7 @@ because their Claude session will not see it until they pull.
 | ID | Task | Done when | Due | Status |
 |---|---|---|---|---|
 | P1 | Push the setup commit: decision 007, this sprint table, CLAUDE.md sprint rules, `docs/reports/final/sections/README.md` | on `main` | Sun 5pm | done 11/15, `6e9c565` |
-| P2 | Message Ari and Jay: pull, push local work, read and sign 007 | both signed in 007 | Sun 6pm | Ari signed (`5bc03a1`); Jay pending |
+| P2 | Message Ari and Jay: pull, push local work, read and sign 007 | both signed in 007 | Sun 6pm | done 11/15: Ari `5bc03a1`, Jay `4504289` |
 | P3 | `src/decomposition.py` -> `results/decomposition.md` (old TASK 7, moved from Ari). Split the CUT90 and HIKE90 index change into belief change, roll-down on ordinary days, bracket rolls and announcement resets, as in `docs/log/palmer.md` 11/12, on the final index from 2023-02-02, with the Milestone 1 sample as a comparison row. Imports `index/` read-only. Start on current code, rerun after A4 | table committed after A4 | Sun 10:30pm | script, tests and pre-A4 table pushed (`src` rule); rerun after A4 |
 | P4 | After A4: rerun `src/settlement_check.py`, `src/reset_check.py` (dealer break-even, by-direction reset), `src/leg_liquidity.py`. Commit `results/*.md`. Check they agree with `index/results/` | committed | Sun 10:30pm | open |
 | P5 | `docs/reports/final/numbers.md`: every number the report cites, one line each, with source file. Replaces the "Headline numbers" list in the outline | committed | Sun 11pm | open |
