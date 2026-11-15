@@ -36,7 +36,7 @@ because their Claude session will not see it until they pull.
 
 | ID | Task | Done when | Due | Status |
 |---|---|---|---|---|
-| A1 | Read 007. Ari decides; add the "Accepted by" line (or write objections in `docs/log/ari.md` and message Palmer). Push alone | pushed | Sun 6pm | open |
+| A1 | Read 007. Ari decides; add the "Accepted by" line (or write objections in `docs/log/ari.md` and message Palmer). Push alone | pushed | Sun 6pm | done 11/15 16:42, `5bc03a1` |
 | A2 | `index/legs.py`: rule `final` = `src` plus wide-book mid (logic in `src/settlement_check.py::wide_mid_days`: source is trade, bid > 0, ask < 1, quote_age <= 3 -> value = mid, source `wide_mid`). Default in `build.py` and `futures.py`; keep `src` and `m1` for robustness. Tests | tests pass | Sun 7:30pm | open |
 | A3 | `index/futures.py`: spec section 4 expiry calendar (reference: `src/settlement_check.py::expiries_no_decision`; must move 5 of 44 expiries) and spec section 5 fallback (3 of 5, extend back to 10 days but not past a decision date, defer, backstop). Robustness rows listed in 007. Tests for each fallback branch (old TASK 18) | tests pass | Sun 8:30pm | open |
 | A4 | Rerun `build.py`, `futures.py`, `figures.py` (add a final CUT90/HIKE90 series figure if section 2 uses one). Update `index/README.md` results and its "For the spec" list. Log entry with the new headline numbers. **Push, then message Palmer and Jay** | pushed | Sun 9pm | open |
@@ -59,6 +59,11 @@ because their Claude session will not see it until they pull.
 
 | # | From | To | Request | Status |
 |---|---|---|---|---|
+| R1 | Ari | Jay | 007 F1. `docs/spec.md` section 5: describe the wide-book mid as the code does. It replaces the last-trade price on a book that is two-sided, quoted within 3 days and wider than 10c (`src/settlement_check.py::wide_mid_days`, A2). A wide book with no trade in 3 days still has no price (108 of 7,192 index-leg days from 2023-02-02). 007's wording ("any two-sided book") is broader than the code | open |
+| R2 | Ari | Jay | 007 F2. Spec section 5 rounds S to the nearest 0.25; 007 and A3 do not, so the backtest does not round. Drop the rounding or say it is untested (it would add up to $0.125 of hedge error) | open |
+| R3 | Ari | Jay | 007 F3. Spec section 5 says the 10-day extension never reaches a decision "because section 4 keeps decisions out of the window". Not so: 11 of 45 final-calendar expiries have a decision exactly 9 days before expiry, the first day the extension can reach. The backtest counts the decision day (its close is after the announcement) and never goes earlier, so the guard never binds. Please fix the reasoning | open |
+| R4 | Ari | Jay | 007 F4. The tail fill is part of the 007 rule but not of spec section 5's source hierarchy ("carried forward up to three days", "no fourth branch"). 437 of 7,192 index-leg days from 2023-02-02 carry a pinned price beyond 3 days. Please add it as a branch | open |
+| R5 | Ari | Palmer | 007 F5. The final expiry calendar has 45 expiries, not 44: 2026-10-30 moves back to 2026-10-23, inside the data (your `settlement_check.py` already has 45). "5 of 44 move" is still right for the old calendar. `numbers.md` should give 45 for the final sample | open |
 
 ---
 
