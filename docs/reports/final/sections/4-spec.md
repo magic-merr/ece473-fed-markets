@@ -1,7 +1,6 @@
 # 4. Contract specification
 
-Owner: Jay. Full terms: `docs/spec.md`. Configuration: decision 007. Numbers: `{{numbers.md: ...}}` until the
-freeze; the counts in this section come from `theory/noarb.py`, which reads only frozen Milestone 1 data.
+Owner: Jay. Full terms: `docs/spec.md`. Configuration: decision 007. Numbers: `docs/reports/final/numbers.md`; the counts in this section come from `theory/noarb.py`, which reads only frozen Milestone 1 data.
 
 ## 4.1 Terms
 
@@ -93,15 +92,15 @@ Full collateral makes the contract free of counterparty risk without a margin sy
 sum to the maximum payout, so neither side can owe more than it has already posted. This is the construction
 Kalshi and Polymarket use for a complete set, in which a dollar of collateral splits into a YES and a NO that
 always sum to a dollar. The price of that safety is the time value of the locked collateral, which is small
-next to trading cost, about `{{numbers.md: capital_cost_90d}}` per contract at a ninety-day lead against
-`{{numbers.md: hedge_cost_cut90}}` of round-trip hedging (section 7).
+next to trading cost, about $1.04 per contract at a ninety-day lead against
+$7.76 of round-trip hedging (section 7).
 
 Prediction-market prices are not quite probabilities, because a contract paying a dollar at resolution trades
 at roughly its probability times a discount for the collateral locked until then. We promised in Milestone I
 to estimate that discount. We can report that it is **not identifiable in this data**, and why. A discount
 predicts an asymmetry, with a near-certain winner trading below a dollar and a near-certain loser near zero.
-In our data both sides are off by the same amount at every horizon, `{{numbers.md: discount_gap_1week}}` at a
-week and `{{numbers.md: discount_gap_150day}}` past 150 days, and the implied annualized carry reaches triple
+In our data both sides are off by the same amount at every horizon, 3 cents at a
+week and 6 cents past 150 days, and the implied annualized carry reaches triple
 digits, which no financing rate does. What that gap measures is residual uncertainty plus the one-cent tick.
 We therefore bound the discount rather than estimating it, and section 5 shows that the pricing argument does
 not need it.

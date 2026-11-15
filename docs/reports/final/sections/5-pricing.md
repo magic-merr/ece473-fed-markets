@@ -1,6 +1,6 @@
 # 5. Pricing
 
-Owner: Jay. Full argument and proof: `docs/theory.md`. Numbers: `{{numbers.md: ...}}` until the freeze.
+Owner: Jay. Full argument and proof: `docs/theory.md`. Numbers: `docs/reports/final/numbers.md`.
 
 ## 5.1 Fair value from a static hedge
 
@@ -29,7 +29,7 @@ Two things follow.
 and therefore the strike unchanged, so the hedge still works. Our Milestone 1 note expected exactness only
 when no meeting fell before expiry, which is too narrow. The backtest confirms the sharper condition: trades
 with a meeting that held have the same near-zero hedge error as trades with no meeting at all,
-`{{numbers.md: cut90_rmse_held}}` against `{{numbers.md: cut90_rmse_no_meeting}}` per contract (section 7).
+$0.20 against $0.22 per contract (section 7).
 
 **The future prices the roll-down that the spot index cannot deliver.** Between announcements the strike is
 fixed and the ninety-day point advances one day per day, so the weight moves mechanically from the nearer
@@ -39,8 +39,8 @@ meetings, and the change in the two contract prices, which is news. A holder of 
 earns only the news term, because their holdings do not re-weight, and this is the gap our Milestone 1
 backtest measured. The future has no such gap, because `F0` is the cost today of the contracts the index will
 hold at expiry, at the weights it will hold them. The roll-down is already in the price, and it shows up as a
-basis over the spot index that grows with the lead: `{{numbers.md: basis_cut90_7d}}`,
-`{{numbers.md: basis_cut90_30d}}` and `{{numbers.md: basis_cut90_90d}}` at 7, 30 and 90 days (section 7).
+basis over the spot index that grows with the lead: $1.61,
+$8.20 and $17.28 at 7, 30 and 90 days (section 7).
 
 ## 5.2 What a rate change does, and how to charge for it
 
@@ -52,8 +52,8 @@ asks for a further cut, which is worth about the price of two cuts divided by th
 gain per unit held at meeting `m` is therefore about `1 - P_two(m) / P_one(m)`, which is positive. After a
 hike instead, the old strike is two notches away and nearly worthless, so the dealer loses only a little. The
 dealer is long a digital on the Fed moving in the index's direction, and `F0` does not charge for it. The
-backtest shows that asymmetry: a mean gain of `{{numbers.md: cut90_gain_with_move}}` when the Fed moves in the
-index's direction against `{{numbers.md: cut90_gain_against_move}}` when it moves the other way (section 7).
+backtest shows that asymmetry: a mean gain of $25.27 when the Fed moves in the
+index's direction against -$2.51 when it moves the other way (section 7).
 
 Everything needed to price that digital in advance is on the ladder on the trade date. Let `p_dir` be the
 price of at least one step in the index's direction by the last meeting before expiry, and let `G` be the sum
@@ -65,11 +65,12 @@ This is an upper bound on the correction rather than an estimate of it, because 
 index and assumes the old legs go to exactly one.
 
 It works for CUT and overstates for HIKE. The direction probability is well calibrated for both: for CUT90 a
-mean of `{{numbers.md: p_dir_cut90_mean}}` against a realized `{{numbers.md: p_dir_cut90_realized}}`. For CUT90
-the gain term is close, `{{numbers.md: G_cut90_predicted}}` predicted against
-`{{numbers.md: G_cut90_realized}}` realized, and applying the correction cuts the buyer's mean loss from
-`{{numbers.md: buyer_loss_F0_cut90}}` to `{{numbers.md: buyer_loss_Fadj_cut90}}`. For HIKE90 the gain term is
-too large, `{{numbers.md: G_hike90_predicted}}` against `{{numbers.md: G_hike90_realized}}`, and its
+mean of 0.15 against a realized 0.13. For CUT90
+the gain term is close, $22.71 predicted against
+$26.40 realized. The formula is built to overstate the correction, so it is worth saying that for CUT it
+does not: the predicted gain lands a little below the realized one. Applying it cuts the buyer's mean loss
+from $8.63 to $4.92. For HIKE90 the gain term is
+too large, $37.24 against $20.01, and its
 correlation with the realized gain across trades is near zero. The reason is that the ratio of two hikes to
 one hike is read off the entry-day ladder and assumed stable. After the 2023 hikes it was not: once the Fed
 hiked, the market priced further hikes more richly than the entry-day ratio implied, so the re-anchored index
@@ -100,8 +101,8 @@ data.
 ## 5.5 The ladder is consistent enough to settle on
 
 Replication needs the ladder to be internally consistent, since the price of "the upper bound is above `K`"
-must fall as `K` rises. Across `{{numbers.md: ladder_days}}` meeting-days from March 2022,
-`{{numbers.md: ladder_violations_tradable}}` admit an executable violation, meaning a bid at a higher strike
-above an ask at a lower strike, with a largest available credit of `{{numbers.md: ladder_worst_credit}}`. Mid
-prices look much worse at `{{numbers.md: ladder_violations_mid}}`, but a mid is not a tradable price when the
+must fall as `K` rises. Across 11,179 meeting-days from March 2022,
+12 (0.11%) admit an executable violation, meaning a bid at a higher strike
+above an ask at a lower strike, with a largest available credit of $0.09. Mid
+prices look much worse at 25.5%, but a mid is not a tradable price when the
 book is one-sided, which is common in this ladder, and the executable test is the one that matters.

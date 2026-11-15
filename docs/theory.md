@@ -2,8 +2,8 @@
 
 Owner: Jay. Covers TASKS 9, 14 and 20. Configuration: decision 007. Contract terms: `docs/spec.md`.
 
-Every empirical number below is written as `{{numbers.md: key}}` with its source file beside it, and is filled
-from `docs/reports/final/numbers.md` after the results freeze (J5, CLAUDE.md sprint rule 7).
+Every empirical number below comes from `docs/reports/final/numbers.md` (CLAUDE.md sprint rule 7), which
+cites its source file and commit. Filled at J5.
 
 ## 1. Notation
 
@@ -62,7 +62,7 @@ known at `t` and the hedge is still exact. This is the sharper form of the condi
 `docs/notes/futures_pricing.md`, which said "no meeting before expiry".
 
 Ari's backtest confirms it. Trades with a meeting that held have the same near-zero hedge error as trades with
-no meeting at all: RMSE `{{numbers.md: cut90_rmse_held}}` against `{{numbers.md: cut90_rmse_no_meeting}}` per
+no meeting at all: RMSE $0.20 against $0.22 per
 $100 contract, where the residual comes only from settlement days with no valid index value
 (`index/results/futures_backtest.md`).
 
@@ -79,15 +79,15 @@ The first term is the roll-down. It is mechanical: it depends only on the slope 
 two bracketing meetings and the gap between them, not on any news. The second and third terms are belief
 change. A holder of the two meeting contracts earns only the belief terms, because their holdings do not
 re-weight. That gap is what the Milestone 1 backtest measured: the roll-down averaged
-`{{numbers.md: rolldown_bp_per_day}}` basis points a day and accumulated to
-`{{numbers.md: rolldown_total_m1}}` index points, against an index that moved
-`{{numbers.md: index_change_m1}}` (`results/decomposition.md`).
+26.0 basis points a day and accumulated to
+399.3 index points, against an index that moved
++9.4 (`results/decomposition.md`).
 
 The future does not have this problem, and Proposition 1 says why. `F0` is the cost today of the contracts the
 index will hold at expiry, at the weights it will hold them. The roll-down is already in that price. This is
 the product's reason to exist, and it is visible as a positive basis that grows with the lead: `F0` minus the
-spot index averages `{{numbers.md: basis_cut90_7d}}`, `{{numbers.md: basis_cut90_30d}}` and
-`{{numbers.md: basis_cut90_90d}}` at 7, 30 and 90 days (`index/results/futures_backtest.md`).
+spot index averages $1.61, $8.20 and
+$17.28 at 7, 30 and 90 days (`index/results/futures_backtest.md`).
 
 ## 3. What a rate change does
 
@@ -108,8 +108,8 @@ loses only a little. The dealer is long a digital on "the Fed moves in the index
 and `F0` does not charge for it.
 
 The backtest shows exactly this asymmetry. The CUT90 dealer's mean gain is
-`{{numbers.md: cut90_gain_with_move}}` when the Fed moves in the index's direction,
-`{{numbers.md: cut90_gain_against_move}}` when it moves against, and about zero with no change
+$25.27 when the Fed moves in the index's direction,
+-$2.51 when it moves against, and about zero with no change
 (`results/reset_adjustment.md`).
 
 ### 3.1 An ex-ante correction
@@ -130,14 +130,15 @@ cost the dealer a little, and it assumes the old legs go to exactly 1. Both push
 
 **How it performs** (`results/reset_adjustment.md`):
 
-- `p_dir` is well calibrated for both indices. For CUT90 the mean is `{{numbers.md: p_dir_cut90_mean}}` against
-  a realized share of `{{numbers.md: p_dir_cut90_realized}}`.
-- **For CUT, `G` is about right.** Predicted `{{numbers.md: G_cut90_predicted}}` against realized
-  `{{numbers.md: G_cut90_realized}}`. The correction tracks the dealer's mean gain closely to 60 days and
-  overshoots at 90. Applying it cuts the CUT90 buyer's mean loss from `{{numbers.md: buyer_loss_F0_cut90}}` to
-  `{{numbers.md: buyer_loss_Fadj_cut90}}`.
-- **For HIKE, `G` is too large**, `{{numbers.md: G_hike90_predicted}}` predicted against
-  `{{numbers.md: G_hike90_realized}}` realized, and the cross-trade correlation is near zero. The reason is
+- `p_dir` is well calibrated for both indices. For CUT90 the mean is 0.15 against
+  a realized share of 0.13.
+- **For CUT, `G` is about right, and the bound does not bind.** Predicted $22.71 against realized
+  $26.40, so in this sample the correction comes in a little below the gain it is built to cap rather than
+  above it. The correction tracks the dealer's mean gain closely to 60 days and
+  overshoots at 90. Applying it cuts the CUT90 buyer's mean loss from $8.63 to
+  $4.92.
+- **For HIKE, `G` is too large**, $37.24 predicted against
+  $20.01 realized, and the cross-trade correlation is near zero. The reason is
   that `P_two / P_one` is read off the entry-day ladder, which assumes the ratio is stable. After the 2023
   hikes it was not: once the Fed hiked, the market priced further hikes more richly than the entry-day ratio
   implied, so the re-anchored index was worth more than `P_two / P_one` predicted and the dealer's true gain
@@ -177,22 +178,22 @@ the product does not require anyone to do.
 
 **It is also not identifiable in this data** (TASK 10, `theory/README.md`). A discount predicts an asymmetry:
 a near-certain winner trades below $1 and a near-certain loser near $0. Both sides are off by the same amount
-at every horizon, about `{{numbers.md: discount_gap_1week}}` at a week and
-`{{numbers.md: discount_gap_150day}}` past 150 days, and the implied annualized carry runs to triple digits.
+at every horizon, about 3 cents at a week and
+6 cents past 150 days, and the implied annualized carry runs to triple digits.
 What is being measured is residual uncertainty plus the one-cent tick, not a financing rate.
 
 So the discount is carried as a bounded term. Any true `D` shifts `F0` by less than the figures above, which
-are themselves far below the round-trip hedge cost of `{{numbers.md: hedge_cost_cut90}}`
+are themselves far below the round-trip hedge cost of $7.76
 (`index/results/futures_backtest.md`). Decision 007 records this as bounded, not estimated.
 
 ## 6. The ladder the index reads
 
 The index reads one strike per meeting, at `U_t - 0.25`. Proposition 1 needs those prices to be internally
 consistent, since "the upper bound is above `K`" must be weakly decreasing in `K`. Across
-`{{numbers.md: ladder_days}}` meeting-days from March 2022, `{{numbers.md: ladder_violations_tradable}}`
+11,179 meeting-days from March 2022, 12 (0.11%)
 admit an executable violation, a bid at a higher strike above an ask at a lower strike, with a largest credit
-of `{{numbers.md: ladder_worst_credit}}` (`theory/README.md`). Mid prices look far worse, at
-`{{numbers.md: ladder_violations_mid}}`, but a mid is not a tradable price when the book is one-sided, which
+of $0.09 (`theory/README.md`). Mid prices look far worse, at
+25.5%, but a mid is not a tradable price when the book is one-sided, which
 is common in this ladder. The ladder is sound enough to settle a contract on.
 
 ## 7. What this does not cover

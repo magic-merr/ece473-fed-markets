@@ -117,3 +117,26 @@ Results (numbers worth keeping): none new.
 Open issues: none on the spec. 48 `{{numbers.md: key}}` placeholders remain in `theory.md` (23) and sections 1,
 4 and 5 (5, 5, 15); `docs/spec.md` has none left.
 Next: J5 (fill the placeholders), then review Monday.
+
+## 2026-11-15 17:55  main
+Did: J5, and J6 is now complete rather than a placeholder draft.
+- Filled all 52 `{{numbers.md: key}}` placeholders in `docs/theory.md` and sections 1, 4 and 5 from
+  `docs/reports/final/numbers.md`. All 26 distinct keys resolved; none missing.
+
+Results (numbers worth keeping): none new. One claim of mine changed on contact with the final numbers:
+- `theory.md` 3.1 and section 5.2 called `F_adj = F0 - p_dir x G` an upper bound on the correction, which is
+  what its construction makes it. On the final run it is not binding for CUT90: predicted G is $22.71 against
+  a realized gain of $26.40, so the correction lands below the gain it is built to cap. Both files now say so.
+  For HIKE90 it does overstate, $37.24 against $20.01, as expected. Worth a sentence in section 7 too if Ari
+  reports the same pair.
+- Everything else held: the held-meeting and no-meeting RMSEs are $0.20 and $0.22, so "a meeting that holds
+  does not break the hedge" stands; the basis still grows with the lead ($1.61, $8.20, $17.28); p_dir is still
+  calibrated (0.15 against 0.13); capital at 90 days is $1.04 against $7.76 of hedge cost.
+
+Open issues:
+- Line wrapping in the four files is ragged where a key was replaced by a shorter value. Cosmetic, and Palmer
+  reflows on Monday when he assembles.
+- Section 7 is Ari's. If his G figures differ from `numbers.md`, section 5 and `theory.md` follow `numbers.md`
+  and he should file a Request rather than either of us editing the other's text.
+
+Next: Monday, read through sections 1, 4 and 5 in Palmer's assembled draft by 6pm. Nothing else outstanding.
