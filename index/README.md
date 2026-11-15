@@ -9,6 +9,7 @@ cd index
 python build.py      # index -> processed/index_daily.csv (H=90), processed/index_daily_h60.csv, results/index_vs_m1.csv
 python futures.py    # backtest -> results/futures_*.csv, results/futures_backtest.md, processed/futures_trades.csv
 python figures.py    # results/fig_hedge_error.png, results/fig_hedge_cost.png, results/fig_index_series.png
+python event_study.py  # results/event_study.md (run after futures.py)
 python -m pytest tests -q
 ```
 
@@ -18,7 +19,8 @@ python -m pytest tests -q
 | `build.py` | CUT_H and HIKE_H for any horizon H, written in the decision 003 format. |
 | `futures.py` | Expiry calendar, settlement procedure, static hedge, hedge error, trading cost, capital, fair value, robustness rows. |
 | `figures.py` | The three figures. |
-| `tests/test_futures.py` | 20 tests: hand-calculated synthetic cases, every settlement fallback branch, the `final` rule against `src/settlement_check.py::wide_mid_days`, the spec calendar against `expiries_no_decision`, exact reproduction of the Milestone 1 index and of the 11/12 tables (`tests/ref_1112/`), and an independent recomputation of real trades. |
+| `event_study.py` | Index change on each FOMC decision day, by decision, next to the futures hedge errors. |
+| `tests/test_futures.py` | 22 tests: hand-calculated synthetic cases, every settlement fallback branch, the `final` rule against `src/settlement_check.py::wide_mid_days`, the spec calendar against `expiries_no_decision`, exact reproduction of the Milestone 1 index and of the 11/12 tables (`tests/ref_1112/`), and an independent recomputation of real trades. |
 
 ## Definitions
 
@@ -125,6 +127,33 @@ CUT90, depending on the lead.
 grows with the lead: $1.61 at 7 days, $8.20 at 30 and $17.28 at 90. In this sample a buyer of the CUT90 future lost
 about that gap on average ($0.35 gained at 7 days, $7.83 and $19.73 lost at 30 and 90), because cuts kept arriving
 later than priced. For HIKE90 the gap is close to zero ($0.25, $0.30, -$0.05).
+
+**6. The sign of the hedge error follows the direction of the move** (`results/futures_error_by_direction.csv`).
+When the Fed moves in the index's direction, the dealer gained on every trade. When it moves the other way, the
+dealer loses a little. No trade in the sample spans moves in both directions.
+
+| Index | Move | Relative to the index | Trades | Mean error ($) | Range ($) | Share where the dealer gains |
+|---|---|---|---|---|---|---|
+| CUT90 | cut | with | 39 | 25.25 | 0.17 to 56.21 | 100% |
+| CUT90 | hike | against | 26 | -2.55 | -6.28 to 0.47 | 4% |
+| CUT60 | cut | with | 40 | 36.28 | 2.03 to 74.30 | 100% |
+| CUT60 | hike | against | 26 | -1.45 | -3.59 to 0.38 | 23% |
+| HIKE90 | cut | against | 47 | -2.07 | -8.65 to 0.97 | 15% |
+| HIKE90 | hike | with | 26 | 20.05 | 3.42 to 50.61 | 100% |
+| HIKE60 | cut | against | 47 | -1.36 | -12.70 to 0.46 | 28% |
+| HIKE60 | hike | with | 26 | 28.51 | 2.42 to 62.93 | 100% |
+
+**7. Event study: on a decision day the index falls when the Fed moves in its direction** (`results/event_study.md`).
+CUT90 and HIKE90 at the close of each of the 29 decision days from 2023-02-02, minus the close of the day before
+(the nearest valid day within 3 days if either is missing). The final rule has no value around several cut days,
+because the books for those meetings went stale, so the Milestone 1 rule is shown beside it. In brackets: decisions
+with a value.
+
+| Decision | Decisions | CUT90 mean change (pp), final rule | CUT90, Milestone 1 rule | HIKE90 mean change (pp), final rule | HIKE90, Milestone 1 rule |
+|---|---|---|---|---|---|
+| cut | 6 | -26.99 (3) | -23.76 (6) | no value | 1.04 (5) |
+| hold | 19 | -0.31 (18) | 0.77 (17) | -0.50 (17) | 0.25 (18) |
+| hike | 4 | 1.75 (3) | 5.69 (3) | -37.62 (4) | -45.97 (3) |
 
 ## Robustness (`results/futures_robustness.csv`)
 

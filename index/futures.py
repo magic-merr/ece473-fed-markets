@@ -304,6 +304,8 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
 
     meets = [m for m in legs.fomc_dates() if entry < m <= last]
     moves = [m for m in meets if build.ub_at(m) != build.ub_at(m - dt.timedelta(days=1))]
+    dirs = {"cut" if build.ub_at(m) < build.ub_at(m - dt.timedelta(days=1)) else "hike" for m in moves}
+    direction = "none" if not dirs else (dirs.pop() if len(dirs) == 1 else "mixed")
     hold = (expiry - entry).days
     i_t = imap.get(entry, np.nan)
     out = {
@@ -312,6 +314,7 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
         "contracts": "/".join(legs.meeting_ids()[m] for m in contracts), "n_contracts": len(contracts),
         "n_meetings_before_expiry": len(meets), "rate_moves": "/".join(str(m) for m in moves),
         "case": "rate_move" if moves else ("meeting_hold" if meets else "no_meeting"),
+        "move_direction": direction,
         "settle_days_valid": len(valid) if fallback == "ari1112" else st["window_valid"],
         "fallback": len(valid) < SETTLE_DAYS,
         "settle_waited": max(settle_days) > expiry, "settle_method": method,
@@ -487,6 +490,27 @@ ROBUSTNESS = [   # (label, run kwargs); decision 007 rows plus the 11/12 reprodu
 ]
 
 
+def error_by_direction(tr):
+    """A5: hedge error on trades with a rate change before expiry, by the direction of the change. 'With the
+    index' means a cut for a CUT index or a hike for a HIKE index. err > 0: the dealer (short future, long
+    hedge) gains."""
+    rows = []
+    g0 = tr[tr["case"] == "rate_move"]
+    for (h, s), g in g0.groupby(["horizon", "side"]):
+        for d in ("cut", "hike", "mixed"):
+            x = g[g["move_direction"] == d]
+            if not len(x):
+                continue
+            e = x["err_mid"]
+            rows.append({"index": _name(h, s), "direction": d,
+                         "relative_to_index": "with" if d == s else ("against" if d in ("cut", "hike") else "mixed"),
+                         "trades": len(x), "expiries": x["expiry"].nunique(),
+                         "mean_err": e.mean(), "median_err": e.median(), "rmse_err": float(np.sqrt((e ** 2).mean())),
+                         "min_err": e.min(), "max_err": e.max(), "share_dealer_gains": (e > 0).mean(),
+                         "mean_futures_pnl_long": x["futures_pnl_long"].mean()})
+    return pd.DataFrame(rows)
+
+
 def settlement_methods(tr):
     rows = []
     for (h, s), g in tr.groupby(["horizon", "side"]):
@@ -535,6 +559,7 @@ def report(tr, sk, rob):
             "futures_accuracy_by_lead": accuracy_by_lead(tr), "futures_rate_move_events": move_events(tr),
             "futures_costs": costs(tr), "futures_costs_pooled": costs_pooled(tr),
             "futures_capital": capital(tr), "futures_settlement_methods": settlement_methods(tr),
+            "futures_error_by_direction": error_by_direction(tr),
             "futures_robustness": rob}
     RESULTS.mkdir(parents=True, exist_ok=True)
     build.PROCESSED.mkdir(exist_ok=True)
@@ -558,7 +583,10 @@ def report(tr, sk, rob):
         "err = hedge proceeds - settlement. Positive: the dealer (short future, long hedge) gains. "
         "Hedge effectiveness = 1 - sum(err^2) / sum(futures P&L^2).", "",
         _md(tabs["futures_accuracy_by_case"]), "", "### By lead", "", _md(tabs["futures_accuracy_by_lead"]), "",
-        "### Trades with a rate change before expiry", "", _md(tabs["futures_rate_move_events"]), "",
+        "### Trades with a rate change before expiry, by direction of the change", "",
+        "with: a cut for CUT, a hike for HIKE. share_dealer_gains: share of trades with err > 0.", "",
+        _md(tabs["futures_error_by_direction"]), "",
+        "### Trades with a rate change before expiry, by meeting", "", _md(tabs["futures_rate_move_events"]), "",
         "## Trading cost of the hedge (taker, vs. the index's own prices)", "",
         _md(tabs["futures_costs_pooled"]), "", "### By lead", "", _md(tabs["futures_costs"]), "",
         "## Capital", "", f"dealer_capital_cost: dollar-days at an illustrative {CAPITAL_RATE:.0%} a year.", "",

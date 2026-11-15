@@ -109,7 +109,22 @@ err = hedge proceeds - settlement. Positive: the dealer (short future, long hedg
 | HIKE90  |     60 |              0.38 |               0.00 |       40 |         40 |       8.99 |       2.18 |         42.05 |                   0.65 |             18.05 |                  0.75 |
 | HIKE90  |     90 |              0.41 |               0.00 |       37 |         37 |      12.65 |       3.64 |         50.61 |                   0.68 |             20.88 |                  0.63 |
 
-### Trades with a rate change before expiry
+### Trades with a rate change before expiry, by direction of the change
+
+with: a cut for CUT, a hike for HIKE. share_dealer_gains: share of trades with err > 0.
+
+| index   | direction   | relative_to_index   |   trades |   expiries |   mean_err |   median_err |   rmse_err |   min_err |   max_err |   share_dealer_gains |   mean_futures_pnl_long |
+|:--------|:------------|:--------------------|---------:|-----------:|-----------:|-------------:|-----------:|----------:|----------:|---------------------:|------------------------:|
+| CUT60   | cut         | with                |       40 |         12 |      36.28 |        24.60 |      46.79 |      2.03 |     74.30 |                 1.00 |                  -29.92 |
+| CUT60   | hike        | against             |       26 |          9 |      -1.45 |        -1.27 |       2.01 |     -3.59 |      0.38 |                 0.23 |                   -6.25 |
+| HIKE60  | cut         | against             |       47 |         12 |      -1.36 |        -0.65 |       2.49 |    -12.70 |      0.46 |                 0.28 |                   -0.34 |
+| HIKE60  | hike        | with                |       26 |          9 |      28.51 |        21.80 |      32.52 |      2.42 |     62.93 |                 1.00 |                   -9.53 |
+| CUT90   | cut         | with                |       39 |         12 |      25.25 |        16.46 |      33.60 |      0.17 |     56.21 |                 1.00 |                  -19.84 |
+| CUT90   | hike        | against             |       26 |          9 |      -2.55 |        -1.92 |       3.19 |     -6.28 |      0.47 |                 0.04 |                   -6.93 |
+| HIKE90  | cut         | against             |       47 |         12 |      -2.07 |        -1.95 |       2.93 |     -8.65 |      0.97 |                 0.15 |                    0.06 |
+| HIKE90  | hike        | with                |       26 |          9 |      20.05 |        15.09 |      24.61 |      3.42 |     50.61 |                 1.00 |                   -1.53 |
+
+### Trades with a rate change before expiry, by meeting
 
 | index   | rate_moves                       |   trades |   expiries |   mean_err |   min_err |   max_err |
 |:--------|:---------------------------------|---------:|-----------:|-----------:|----------:|----------:|

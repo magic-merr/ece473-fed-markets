@@ -117,6 +117,7 @@ def test_hedge_error_on_cut_is_the_strike_reset(syn):
             hedge += 20 * x * (1 - yes_price(m, 4.25, d))     # old strike, held since t0
             settle += 20 * x * (1 - yes_price(m, 4.00, d))    # index re-struck at the new upper bound
     assert t["err_mid"] == pytest.approx(hedge - settle) and t["err_mid"] > 0
+    assert t["move_direction"] == "cut"
     h = F.hedge_trade(book, imap(ix, 90, "hike"), 90, "hike", E, t0)
     assert h["err_mid"] < 0                               # a cut hurts the dealer hedging HIKE
 
@@ -321,3 +322,28 @@ def test_1112_configuration_reproduces_the_1112_tables():
             "futures_rate_move_events": F.move_events(tr), "futures_coverage": F.coverage(tr, sk)}
     for k, v in tabs.items():
         assert v.to_csv(index=False) == (ref / f"{k}.csv").read_text(), k
+
+
+# ---------------------------------------------------------------- A5, A6
+def test_direction_table(real):
+    assert ((real["move_direction"] == "none") == (real["case"] != "rate_move")).all()
+    tab = F.error_by_direction(real)
+    assert set(tab["relative_to_index"]) <= {"with", "against", "mixed"}
+    assert tab["trades"].sum() == (real["case"] == "rate_move").sum()
+    for r in tab.itertuples(index=False):
+        x = real[(real["case"] == "rate_move") & (real["move_direction"] == r.direction)
+                 & (real["side"] + real["horizon"].astype(str) == r.index.lower())]
+        assert r.mean_err == pytest.approx(x["err_mid"].mean()) and r.trades == len(x)
+
+
+def test_event_study():
+    import event_study as ES
+    dec = ES.decisions()
+    assert len(dec) == 29 and dec["decision"].value_counts().to_dict() == {"hold": 19, "cut": 6, "hike": 4}
+    assert dec["decision_date"].min() >= build.SAMPLE_START and dec["decision_date"].max() <= legs.data_end()
+    ix = build.build_index("final", 90)
+    ev = ES.event_table(ix, dec)
+    s = dict(zip(ix["date"], ix["CUT90"]))
+    r = ev[ev["decision_date"] == D(2024, 12, 18)].iloc[0]           # 25bp cut
+    assert r["CUT90_change"] == pytest.approx(100 * (s[D(2024, 12, 18)] - s[D(2024, 12, 17)]))
+    assert r["CUT90_change"] < -40

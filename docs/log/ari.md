@@ -54,3 +54,23 @@ Open issues:
 - Requests R1 to R4 (Jay, spec wording) and R5 (Palmer, numbers.md: 45 expiries) are open.
 Next: A5 (hedge error by direction of the move), A6 (event study), by 10:30pm. A7 on Monday.
 
+## 2026-11-15 16:58  main
+Did:
+- A5: `futures.py` classifies each rate-move trade by the direction of the change (`move_direction`) and writes
+  `index/results/futures_error_by_direction.csv` plus a section in `futures_backtest.md`. No A4 table changed.
+- A6: new `index/event_study.py` -> `index/results/event_study.md`, `event_study.csv`, `event_study_summary.csv`:
+  CUT90 and HIKE90 change on each FOMC decision day from 2023-02-02 (29 decisions: 6 cuts, 19 holds, 4 hikes), by
+  decision, next to the mean futures hedge error of trades whose only rate change was that decision. The final rule
+  has no value around several cut days (stale books), so the Milestone 1 rule is shown beside it.
+- 22 index tests. README results 6 and 7 added.
+Results (numbers worth keeping, pre-freeze):
+- Hedge error by direction ($ per $100). With the index's direction the dealer gains on every trade: mean CUT90
+  25.25, CUT60 36.28, HIKE90 20.05, HIKE60 28.51. Against it: mean CUT90 -2.55, CUT60 -1.45, HIKE90 -2.07,
+  HIKE60 -1.36; worst -12.70 (HIKE60). No trade spans moves in both directions.
+- Event study, mean change on the decision day (pp). Cuts: CUT90 -26.99 on the final rule (3 of 6 with a value),
+  -23.76 on the Milestone 1 rule (6 of 6). Hikes: HIKE90 -37.62 (4 of 4) and -45.97 (3 of 4). Holds: CUT90 -0.31,
+  HIKE90 -0.50 (final rule). Largest single move: CUT90 -50.01 on 2024-12-18.
+Open issues:
+- Requests R1 to R5 still open. A7 (sections 2, 6, 7) on Monday from numbers.md only.
+Next: stop code changes before Palmer's 11pm tag; A7 Monday.
+
