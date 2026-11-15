@@ -200,8 +200,8 @@ def main(argv=None):
          "one_day"),
     ]
     frames, comp = {}, []
-    for label, rule, start, method in configs:
-        frames[label] = daily(rule, start=start, end=end, method=method)
+    for label, cfg_rule, start, method in configs:
+        frames[label] = daily(cfg_rule, start=start, end=end, method=method)
         comp += components(frames[label], label, end)
     comp = pd.DataFrame(comp)
     parts = ["belief_change", "roll_down", "bracket_rolls", "announcement_resets"]
