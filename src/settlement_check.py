@@ -31,13 +31,30 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "index"))
+sys.path.append(str(ROOT / "index"))  # appended: src/figures.py and index/figures.py share a name
 
 import build  # noqa: E402
 import futures as F  # noqa: E402
 import legs  # noqa: E402
 
 OUT = ROOT / "results"
+
+
+def expiries_m1(start: dt.date, end: dt.date) -> list[dt.date]:
+    """Milestone 1 expiry rule, copied from index/futures.py at 6d9a597 (11/12) so the base variant keeps
+    meaning the old calendar after A3 makes the spec calendar the default there: last Friday of each month,
+    moved to the prior Friday while within one business day of a decision."""
+    fomc = set(legs.fomc_dates())
+    out = []
+    for mo in pd.date_range(start.replace(day=1), end, freq="MS"):
+        last = (mo + pd.offsets.MonthEnd(0)).date()
+        e = last - dt.timedelta(days=(last.weekday() - 4) % 7)
+        while any(abs(np.busday_count(min(e, f), max(e, f))) <= 1 for f in fomc
+                  if abs((f - e).days) <= 7):
+            e -= dt.timedelta(days=7)
+        if start <= e <= end:
+            out.append(e)
+    return out
 
 
 def expiries_no_decision(start: dt.date, end: dt.date) -> list[dt.date]:
@@ -176,10 +193,10 @@ def main():
     wmaps = {h: index_maps(wbook, h) for h in F.HORIZONS}
     variants = {}
     for lab, bk, mp, exp_fn, nt in (
-            ("base", book, maps, F.expiries, False), ("no_trade", book, maps, F.expiries, True),
+            ("base", book, maps, expiries_m1, False), ("no_trade", book, maps, expiries_m1, True),
             ("no_decision", book, maps, expiries_no_decision, False),
             ("both", book, maps, expiries_no_decision, True),
-            ("wide_mid", wbook, wmaps, F.expiries, False),
+            ("wide_mid", wbook, wmaps, expiries_m1, False),
             ("proposed", wbook, wmaps, expiries_no_decision, False)):
         variants[lab] = run_variant(bk, mp, exp_fn, nt)
     base_tr = variants["base"][0]
@@ -189,7 +206,7 @@ def main():
     tab = pd.DataFrame(rows)
     tab.to_csv(OUT / "settlement_rule_check.csv", index=False)
 
-    e_old = F.expiries(build.EXT_START, legs.data_end())
+    e_old = expiries_m1(build.EXT_START, legs.data_end())
     e_new = expiries_no_decision(build.EXT_START, legs.data_end())
     moved = sorted(set(e_old) - set(e_new))
     dec_in = [e for e in e_old if any(F.window(e)[0] <= f <= e for f in legs.fomc_dates())]
