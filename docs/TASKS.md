@@ -49,11 +49,11 @@ because their Claude session will not see it until they pull.
 | ID | Task | Done when | Due | Status |
 |---|---|---|---|---|
 | J1 | Read 007. Jay decides; add the "Accepted by" line (or write objections in `docs/log/jay.md` and message Palmer). Push alone | pushed | Sun 6pm | done 11/15 16:5x, signed with two notes (see 007 and R1) |
-| J2 | `docs/spec.md` to final: section 5 source hierarchy per 007 (book under the rule, wide-book mid, 3-day carry; composite removed, 006 point 3); close the composite [open] item; section 4 justified by definition, remove "the RMSE should fall"; collision counts per 007 (cite 5 of 44); rewrite section 10; status line to final | pushed | Sun 8pm | open |
-| J3 | `docs/theory.md` (old TASKS 9, 14, 20): static hedge exact iff no target-range change before expiry, with proof; fair value as the fixed-weight blend minus a bounded settlement discount; reset adjustment F_adj = F0 - p_dir x G and why it fits CUT but overstates HIKE (`docs/notes/reset_adjustment.md`); continuity between announcements. Numbers as `{{numbers.md}}` placeholders until the tag | draft pushed | Sun 9:30pm | open |
-| J4 | After A4: rerun `theory/noarb.py`; update `theory/README.md` only if a number moved | pushed | Sun 10:30pm | open |
-| J5 | Fill `theory.md` placeholders from `numbers.md` | pushed | Mon 10am | open |
-| J6 | Sections 1, 4, 5 | drafts in `sections/` | Mon 1pm | open |
+| J2 | `docs/spec.md` to final: section 5 source hierarchy per 007 (book under the rule, wide-book mid, 3-day carry; composite removed, 006 point 3); close the composite [open] item; section 4 justified by definition, remove "the RMSE should fall"; collision counts per 007 (cite 5 of 44); rewrite section 10; status line to final | pushed | Sun 8pm | done 11/15 17:4x. Also added the decision-date stop to the 5.2 extension (see R1). No [open] items remain |
+| J3 | `docs/theory.md` (old TASKS 9, 14, 20): static hedge exact iff no target-range change before expiry, with proof; fair value as the fixed-weight blend minus a bounded settlement discount; reset adjustment F_adj = F0 - p_dir x G and why it fits CUT but overstates HIKE (`docs/notes/reset_adjustment.md`); continuity between announcements. Numbers as `{{numbers.md}}` placeholders until the tag | draft pushed | Sun 9:30pm | done 11/15 17:4x, all empirical numbers are `{{numbers.md: key}}` placeholders |
+| J4 | After A4: rerun `theory/noarb.py`; update `theory/README.md` only if a number moved | pushed | Sun 10:30pm | blocked on A4. Note: `noarb.py` reads only `index_m1/` frozen data and `fomc_calendar.csv`, so A4 cannot move its numbers. Rerun on 11/15 after J2/J3 reproduced them exactly. The post-A4 run is a confirmation |
+| J5 | Fill `theory.md` placeholders from `numbers.md` | pushed | Mon 10am | blocked on P5. Placeholder keys are listed in `docs/log/jay.md` 11/15 so P5 can use the same names |
+| J6 | Sections 1, 4, 5 | drafts in `sections/` | Mon 1pm | drafts done 11/15 17:4x, placeholders throughout. Review after `numbers.md` (J5) |
 
 ### Requests (between people)
 

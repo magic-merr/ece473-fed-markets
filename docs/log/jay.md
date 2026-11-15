@@ -41,3 +41,56 @@ Open issues:
   composite price enters the settlement rule, which waits on Palmer's TASK 3.
 
 Next: TASK 9 (`docs/theory.md`), then TASK 14.
+
+## 2026-11-15 17:45  main
+Did: J1, J2, J3, J6. J4 and J5 are blocked on other people (see below).
+- J1: signed decision 007 as written, pushed alone (`4504289`), with two notes recorded in 007 and Request R1.
+- J2: `docs/spec.md` to final on the 007 configuration. Section 5 now carries the four-step source hierarchy
+  (book, wide-book mid, last trade only on a one-sided book, 3-day carry), the composite is out (006 point 3),
+  and the [open] items are closed. Section 4 is justified by definition and no longer predicts a fall in hedge
+  error. Section 10 rewritten: nothing in the spec is open.
+- J3: `docs/theory.md` written. Proposition 1 (static replication) with proof, the two corollaries, the reset
+  digital and `F_adj`, continuity, the settlement discount, the ladder check. Every empirical number is a
+  `{{numbers.md: key}}` placeholder.
+- J6: drafts of sections 1, 4 and 5 in `docs/reports/final/sections/`.
+- Reran `theory/noarb.py`; all four checks reproduce exactly. 47 tests pass.
+
+Results (numbers worth keeping):
+- **Two errors of mine from 11/12, both now fixed.** (a) Spec section 10 predicted the rate-move RMSE would
+  fall when expiries move. Decision 006 measured it rising for CUT90 and CUT60 and falling for HIKE90 and
+  HIKE60. The expiry rule is right, my argument for it was not; it is now justified by definition only.
+  (b) Spec section 5 claimed the settlement-window extension could never reach back past a decision date.
+  False: in 11 of the 44 expiries a decision falls exactly 9 days before expiry (March and September every
+  year, plus 2024-12 and 2025-06), inside a 10-day extension. The rule in 007 and A3 already said "not past a
+  decision date", so only my justification was wrong. Section 5.2 now states it as an explicit stop condition
+  and says settlement defers when it binds. That is Request R1 for Ari.
+- The settlement discount does not enter the pricing argument at all. Proposition 1 never reads a price as a
+  probability; it uses only that settlement is a fixed-weight combination of traded contracts and that the
+  hedge holds the same contracts and sells them on the same days the index reads them. A discount factor
+  carried on every price appears identically on both sides and cancels. So the fact that D is not identifiable
+  (TASK 10) costs the pricing argument nothing. This closes item 2 of `docs/notes/futures_pricing.md`, which
+  assumed F needed a carry adjustment that Jay would estimate.
+- Corollary 1.2 derives the roll-down term analytically: between announcements `dw/dt = -1/(date b - date a)`,
+  so the index drifts by the cut-curve slope across the bracketing meetings divided by the gap between them.
+  A holder of the two meeting contracts earns none of it. That is the Milestone 1 gap, and `F0` already
+  contains it, which is the product's reason to exist.
+- `theory/noarb.py` unchanged and rerun: 12 executable ladder violations of 11,179 meeting-days, max credit
+  $0.09; expiry collisions 5 of 44, 6 of 55, 7 of 58, all zero under the spec rule.
+
+Open issues:
+- J4 blocked on A4, but it should be a no-op: `theory/noarb.py` reads only `index_m1/` frozen data and the
+  FOMC calendar, neither of which A4 touches. I will rerun it to confirm once A4 lands.
+- J5 blocked on P5. Placeholder keys used in `theory.md` and sections 1, 4, 5, for Palmer to match in
+  `numbers.md`: `rolldown_bp_per_day`, `rolldown_total_m1`, `index_change_m1`, `cut90_rmse_held`,
+  `cut90_rmse_no_meeting`, `basis_cut90_7d`, `basis_cut90_30d`, `basis_cut90_90d`, `hedge_cost_cut90`,
+  `capital_cost_90d`, `cut90_gain_with_move`, `cut90_gain_against_move`, `p_dir_cut90_mean`,
+  `p_dir_cut90_realized`, `G_cut90_predicted`, `G_cut90_realized`, `G_hike90_predicted`, `G_hike90_realized`,
+  `buyer_loss_F0_cut90`, `buyer_loss_Fadj_cut90`, `discount_gap_1week`, `discount_gap_150day`, `ladder_days`,
+  `ladder_violations_tradable`, `ladder_violations_mid`, `ladder_worst_credit`.
+- R1 for Ari: the decision-date stop binds in 11 of 44 expiries, so A3 needs a test on the deferral branch.
+- Sections 1, 4 and 5 cite section 7 for the backtest numbers. If A4 moves the headline figures, the
+  placeholders handle it, but the sentences around them that say "rises" or "is close" need one read-through
+  after the freeze.
+
+Next: J4 once Ari messages that A4 is pushed, then J5 from `numbers.md`, then a review pass on sections 1, 4
+and 5 Monday morning.
