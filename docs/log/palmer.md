@@ -73,3 +73,32 @@ Open issues:
 - 007 puts the wide-mid branch in `index/legs.py`, not `src/stale.py`, so the cross-venue results do not move
   and Ari's rerun does not wait on a Palmer commit.
 Next: P2 (get 007 signed), P3, then P4 after Ari's A4 push.
+
+## 2026-11-15 17:00  main
+Working for Palmer (rows P1 to P9). Claude session.
+Did:
+- P1 and P2 marked done (setup commit `6e9c565`; 007 signed by Ari `5bc03a1` and Jay `4504289`). R5 accepted:
+  the final calendar has 45 expiries (the 5 old-calendar moves plus 2026-10-30 to 2026-10-23, inside the data).
+- P3: `src/decomposition.py`, `tests/test_decomposition.py` (6 tests), pre-A4 `results/decomposition.md` (`5b6bb71`).
+- P4 prep (`683689e`): `src/index_rule.py` picks `final` once `index/legs.py` has it, so `decomposition.py`,
+  `leg_liquidity.py`, `reset_check.py` and `settlement_check.py` rerun unchanged after A4. `reset_check.py` now
+  takes trades from `index/futures.py::run()` in-process, so nothing of Palmer's needs `futures.py` to write into
+  `index/results/`. `settlement_check.py` keeps its own copy of the Milestone 1 calendar for its base variant.
+  Pre-A4 reruns reproduce the committed 11/12 tables exactly. Dry run with a stand-in `final` rule in a scratch
+  copy: all four scripts and the tests pass.
+Results (numbers worth keeping, pre-A4, `src` rule, from 2023-02-02, index points):
+- CUT90: index change +3.4 = belief change -300.4 + roll-down +407.3 + bracket rolls +13.4 + announcement
+  resets -116.9 (of which the 10 rate-change days -127.2). HIKE90: -0.6 = +65.9 + 67.2 + 3.4 - 137.1.
+- Ordinary days: gap -33.4bp a day, equal to minus the term-structure slope (an exact identity, tested).
+- Milestone 1 method reproduces the 11/12 table exactly: CUT90 1,599 day pairs, index +9.4, portfolio -274.3,
+  gap -283.7 (and `index_m1/data/backtest_*.csv` day by day, tested).
+Open issues:
+- Method change from 11/12, for the report: the Milestone 1 tracking backtest used one-day pairs. Under the 3-day
+  rule the index has no value on the day before 5 of the 10 rate changes since Feb 2023 (CUT90 and HIKE90 each),
+  often because a near leg with 2 to 5% weight is stale, so one-day pairs drop most resets (CUT90 resets -42
+  instead of -117). The decomposition therefore chains consecutive days that have an index value, holding the
+  weights fixed in between, and marks a held leg as `index/futures.py` marks a hedge leg when the rule has no
+  price. No interval is dropped. Section 8 should mention the missing pre-decision days.
+- The chained CUT90 index change is +3.43 in all four configurations because the endpoints coincide (CUT90 is
+  0.025 on both 2022-03-16 and 2023-02-01); the telescoping test confirms it is not a bug.
+Next: P4 after Ari's A4 push (rerun all four scripts, compare with `index/results/`), P5 `numbers.md`, P6 tag.
