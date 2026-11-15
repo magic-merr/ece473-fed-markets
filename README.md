@@ -11,11 +11,16 @@ HIKE90 is the same for hikes. Definition: `docs/decisions/003-index-definition-a
 | Part | Folder | Status |
 |---|---|---|
 | Milestone 1: index, tracking backtest, draft contract | `index_m1/`, `docs/reports/milestone1/` | frozen; `cd index_m1 && python build_index.py && python make_figures.py` rebuilds every Milestone 1 number |
-| Data layer: Kalshi / Polymarket / futures, stale rule, fees, liquidity | `src/`, `tests/`, `results/summary.md` | this README below |
-| Final: index on the `src/` panel, futures pricing and backtest | `index/`, `docs/spec.md`, `docs/theory.md` | in progress, see `docs/TASKS.md` |
+| Data layer: Kalshi / Polymarket / futures, stale rule, fees, liquidity | `src/`, `tests/`, `results/summary.md` | final; the 2026-11-12 cross-venue run is report section 3 (decision 007). Rebuilding it needs the raw pulls (this README below) |
+| CUT90/HIKE90 on the decision 007 rule, futures fair value and backtest, event study | `index/` | final at tag `results-final`; `cd index && python build.py && python futures.py && python figures.py && python event_study.py` |
+| Contract spec, pricing argument, no-arbitrage checks | `docs/spec.md`, `docs/theory.md`, `theory/` | final at tag `results-final`; `cd theory && python noarb.py` |
+| Settlement-rule check, reset adjustment and dealer break-even, leg liquidity, return decomposition | `src/*.py` importing `index/` read-only, `results/*.md` | final at tag `results-final`; `cd src && python settlement_check.py && python reset_check.py && python leg_liquidity.py && python decomposition.py` |
+| Every number the report cites | `docs/reports/final/numbers.md` | final at tag `results-final`; `cd src && python report_numbers.py` |
+| Final report | `docs/reports/final/sections/`, `docs/reports/final/outline.md` | writing, Mon 11/16 |
 
-The two parts currently use different cleaning rules and sample starts; decision 002 settles which one
-the final report uses.
+Decision 007 fixes the final configuration. Code and result files are frozen at the tag `results-final`
+(`git checkout results-final`); a fix after it needs a new decision and the tag `results-final-2`. Tests:
+`python -m pytest tests index/tests -q`.
 
 ---
 
