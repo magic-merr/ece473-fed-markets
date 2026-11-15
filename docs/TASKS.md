@@ -1,6 +1,71 @@
 # Tasks to the final report (due Mon 11/16, night)
 
-Freeze results Sunday 11/15, 10pm. Monday is writing and editing only.
+## Final sprint, Sun 11/15 to Mon 11/16
+
+Configuration: decision 007. Rules: CLAUDE.md, "Final sprint rules". Only the owner changes a row's Status.
+Need something from someone else? Add a row to **Requests** at the bottom and message them in the group chat,
+because their Claude session will not see it until they pull.
+
+### Timeline (ET)
+
+| When | Milestone |
+|---|---|
+| Sun 6:00pm | Ari and Jay have pulled, pushed any local work, and signed 007 (A1, J1) |
+| Sun 9:00pm | Ari pushes the final-config rerun (A4). This unblocks P4, J4 |
+| Sun 10:30pm | Palmer's reruns (P3, P4), Jay's noarb check (J4), Ari's tables (A5, A6) pushed |
+| Sun 11:00pm | Palmer writes `docs/reports/final/numbers.md` (P5) and tags `results-final` (P6). Code and results frozen |
+| Mon 1:00pm | Every section draft pushed to `docs/reports/final/sections/` |
+| Mon 1:00 to 8:00pm | Palmer assembles and edits for one voice. Ari and Jay review their sections in the assembled draft by 6pm |
+| Mon 9:00pm | Submit (buffer before the deadline) |
+
+### Palmer (coordination, data, sections 3, 8, appendix, final edit)
+
+| ID | Task | Done when | Due | Status |
+|---|---|---|---|---|
+| P1 | Push the setup commit: decision 007, this sprint table, CLAUDE.md sprint rules, `docs/reports/final/sections/README.md` | on `main` | Sun 5pm | open |
+| P2 | Message Ari and Jay: pull, push local work, read and sign 007 | both signed in 007 | Sun 6pm | open |
+| P3 | `src/decomposition.py` -> `results/decomposition.md` (old TASK 7, moved from Ari). Split the CUT90 and HIKE90 index change into belief change, roll-down on ordinary days, bracket rolls and announcement resets, as in `docs/log/palmer.md` 11/12, on the final index from 2023-02-02, with the Milestone 1 sample as a comparison row. Imports `index/` read-only. Start on current code, rerun after A4 | table committed after A4 | Sun 10:30pm | open |
+| P4 | After A4: rerun `src/settlement_check.py`, `src/reset_check.py` (dealer break-even, by-direction reset), `src/leg_liquidity.py`. Commit `results/*.md`. Check they agree with `index/results/` | committed | Sun 10:30pm | open |
+| P5 | `docs/reports/final/numbers.md`: every number the report cites, one line each, with source file. Replaces the "Headline numbers" list in the outline | committed | Sun 11pm | open |
+| P6 | Tag `results-final` once A4, A5, A6, J4, P3, P4 are done. Update the README status table | tag pushed | Sun 11pm | open |
+| P7 | Sections 3, 8, 9 (appendix: reproduction commands at the tag) | drafts in `sections/` | Mon 1pm | open |
+| P8 | Assemble, edit for one voice, check every number against `numbers.md`, submit | submitted | Mon 9pm | open |
+| P9 | Optional: Bloomberg ZQ history into `raw/rates/zq/` and rerun `src/` on Palmer's Mac. Only if the data is in hand by Sun 8pm; otherwise section 8 states the limit | | Sun 8pm | optional |
+
+### Ari (index, backtest, sections 2, 6, 7)
+
+| ID | Task | Done when | Due | Status |
+|---|---|---|---|---|
+| A1 | Read 007. Ari decides; add the "Accepted by" line (or write objections in `docs/log/ari.md` and message Palmer). Push alone | pushed | Sun 6pm | open |
+| A2 | `index/legs.py`: rule `final` = `src` plus wide-book mid (logic in `src/settlement_check.py::wide_mid_days`: source is trade, bid > 0, ask < 1, quote_age <= 3 -> value = mid, source `wide_mid`). Default in `build.py` and `futures.py`; keep `src` and `m1` for robustness. Tests | tests pass | Sun 7:30pm | open |
+| A3 | `index/futures.py`: spec section 4 expiry calendar (reference: `src/settlement_check.py::expiries_no_decision`; must move 5 of 44 expiries) and spec section 5 fallback (3 of 5, extend back to 10 days but not past a decision date, defer, backstop). Robustness rows listed in 007. Tests for each fallback branch (old TASK 18) | tests pass | Sun 8:30pm | open |
+| A4 | Rerun `build.py`, `futures.py`, `figures.py` (add a final CUT90/HIKE90 series figure if section 2 uses one). Update `index/README.md` results and its "For the spec" list. Log entry with the new headline numbers. **Push, then message Palmer and Jay** | pushed | Sun 9pm | open |
+| A5 | Hedge error by direction of the rate move (cut, hike) for all four indices, from `futures.py` (old TASK 21; break-even itself comes from P4) | in `index/results/` | Sun 10:30pm | open |
+| A6 | Event study (old TASK 22, promised in Milestone I): CUT90/HIKE90 change on each FOMC decision day from Feb 2023, by decision (cut, hold, hike), next to `futures_rate_move_events.csv`. `index/results/event_study.md` | pushed | Sun 10:30pm | open |
+| A7 | Sections 2, 6, 7 | drafts in `sections/` | Mon 1pm | open |
+
+### Jay (spec, theory, sections 1, 4, 5)
+
+| ID | Task | Done when | Due | Status |
+|---|---|---|---|---|
+| J1 | Read 007. Jay decides; add the "Accepted by" line (or write objections in `docs/log/jay.md` and message Palmer). Push alone | pushed | Sun 6pm | open |
+| J2 | `docs/spec.md` to final: section 5 source hierarchy per 007 (book under the rule, wide-book mid, 3-day carry; composite removed, 006 point 3); close the composite [open] item; section 4 justified by definition, remove "the RMSE should fall"; collision counts per 007 (cite 5 of 44); rewrite section 10; status line to final | pushed | Sun 8pm | open |
+| J3 | `docs/theory.md` (old TASKS 9, 14, 20): static hedge exact iff no target-range change before expiry, with proof; fair value as the fixed-weight blend minus a bounded settlement discount; reset adjustment F_adj = F0 - p_dir x G and why it fits CUT but overstates HIKE (`docs/notes/reset_adjustment.md`); continuity between announcements. Numbers as `{{numbers.md}}` placeholders until the tag | draft pushed | Sun 9:30pm | open |
+| J4 | After A4: rerun `theory/noarb.py`; update `theory/README.md` only if a number moved | pushed | Sun 10:30pm | open |
+| J5 | Fill `theory.md` placeholders from `numbers.md` | pushed | Mon 10am | open |
+| J6 | Sections 1, 4, 5 | drafts in `sections/` | Mon 1pm | open |
+
+### Requests (between people)
+
+| # | From | To | Request | Status |
+|---|---|---|---|---|
+
+---
+
+## History: tasks from 11/12 (frozen; decision 007 and the sprint table above supersede the open rows)
+
+
+(Original note: freeze Sunday 10pm. Moved to 11pm by the sprint table.)
 
 | # | Owner | Task | Status | Due |
 |---|---|---|---|---|

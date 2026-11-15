@@ -1,8 +1,13 @@
 # Final report outline (draft 11/12, Palmer)
 
-Due Mon 11/16, night. Results freeze Sun 11/15, 10pm. Each person writes their own sections in their own words
-(CLAUDE.md rule 6), and Palmer edits the whole report for one voice on Monday. Edit the owner, source and
-figure columns here if your plan differs. This file is the shared checklist, not report text.
+Due Mon 11/16, night. Results freeze Sun 11/15, 11pm (tag `results-final`; sprint table in `docs/TASKS.md`).
+Configuration: decision 007. Each person writes their own sections in their own words in
+`docs/reports/final/sections/` (owners in its README), and Palmer edits the whole report for one voice on
+Monday. This file is the shared checklist, not report text. Owners: ask Palmer through the Requests table to
+change a row here.
+
+Update 11/15: the "Headline numbers" list at the bottom is pre-007. After the freeze, cite
+`docs/reports/final/numbers.md` only.
 
 ## Feedback on Milestone 1 that every section must answer (Niusha, 11/11)
 1. Say what the product is before anything else. Section 1 does this in one paragraph.

@@ -59,3 +59,17 @@ Results (numbers worth keeping):
 Open issues:
 - 006 needs Ari and Jay. If accepted: TASK 23 (stale.py), then Ari's rerun with TASK 18.
 Next: my report sections 3 and 8; edit on Monday.
+
+## 2026-11-15 16:45  main
+Did:
+- Final sprint setup. Decision 007 (final configuration; closes 002 to 006 and TASK 17 once Ari and Jay sign).
+  Sprint table at the top of `docs/TASKS.md` (IDs P, A, J; old table kept below as history). CLAUDE.md
+  "Final sprint rules" and an updated repo map. `docs/reports/final/sections/README.md` (one file per section).
+- Checked a clean clone: `index/build.py`, `index/futures.py`, `theory/noarb.py` and both test suites run
+  (30 + 11 tests pass); `futures.py` reproduces the committed 11/12 tables exactly.
+Results (numbers worth keeping): none new.
+Open issues:
+- Old TASK 7 (return decomposition) moves from Ari to Palmer (P3) to take load off the critical path.
+- 007 puts the wide-mid branch in `index/legs.py`, not `src/stale.py`, so the cross-venue results do not move
+  and Ari's rerun does not wait on a Palmer commit.
+Next: P2 (get 007 signed), P3, then P4 after Ari's A4 push.
