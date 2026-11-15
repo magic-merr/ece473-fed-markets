@@ -130,3 +130,17 @@ Open issues:
 - P6 (tag `results-final`) waits on J4. A4, A5, A6, P3, P4 are done.
 - Spec text Requests R1, R4 (Ari to Jay) and R6 (Palmer to Jay) are open. They are docs, not tag blockers.
 Next: P6 once J4 shows done, with the README status table. P7 and P8 Monday.
+
+## 2026-11-15 17:55  main
+Did:
+- P6: all six preconditions done (A4, A5, A6 Ari; J4 Jay `facdec1`; P3, P4). Since the P4 rerun (`8baff80`) the only
+  code change is `src/report_numbers.py`; regenerating `numbers.md` changes only its header hash. README status table
+  updated (`1e72257`), 58 tests pass. Annotated tag `results-final` created on `1e72257`, but this Claude session
+  cannot push tags: `git push` of the tag is cut off and the GitHub API returns 403 ("write access to this API path
+  is not permitted through this proxy"). Palmer pushes the tag from his Mac. Code and results count as frozen
+  from `1e72257` on.
+- Jay applied the spec patch (`facdec1`, J4 done, R1, R4, R6 closed) and did J5 himself (`fab8bef`).
+- R7 to Ari (from Jay): section 7 sentence that F_adj does not bind for CUT90 (G predicted $22.71 vs realized $26.40).
+Results (numbers worth keeping): none new; all in `numbers.md`.
+Open issues: tag push (Palmer, from his Mac).
+Next: Monday. P7 sections 3, 8, 9 by 1pm, P8 assemble, edit, check every number against `numbers.md`, submit by 9pm.
