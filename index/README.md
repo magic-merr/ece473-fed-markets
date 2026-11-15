@@ -46,10 +46,11 @@ value S. It is fully collateralized: at price F the buyer posts F and the seller
 Friday of each month, moved back one week at a time until no FOMC decision falls in the settlement window or on the
 first business day after expiry. The settlement window is the five calendar days ending on expiry. S is the mean of
 the valid index values in the window if at least three are valid. Otherwise the window extends back, one day at a
-time and to ten days in total, until three valid values are found, never before the last decision (the decision day
-counts, because its index is the close after the announcement). Otherwise settlement is deferred to the next
-business day with a valid value, up to ten business days, and after that it is the last valid value before expiry.
-The backtest does not round S (Request R2).
+time, until three valid values are found; the extension stops at ten days in total or at the day after the most
+recent FOMC decision, whichever comes first (the decision day itself is not used). Otherwise settlement is deferred
+to the next business day with a valid value, up to ten business days, and after that it is the last valid value
+before expiry. S is rounded to the nearest 0.25 index points (halves up). In this sample the decision-day stop
+never changes a settlement.
 
 **Static hedge** (`docs/notes/futures_pricing.md`). The dealer who sells the future on day t buys, for each of
 the five settlement days d, 20 x w(d) contracts of meeting m1(d) and 20 x (1 - w(d)) of meeting m2(d), all at
@@ -76,16 +77,18 @@ across expiries, so they are not independent.
 
 **1. The hedge matches the future exactly unless the Fed changes the rate before expiry.** At the index's own
 prices, every trade whose settlement used the full five-day window and had no rate change before expiry has an
-error of exactly zero. A meeting at which the Fed holds does not break the hedge, because the strike only moves when
-the rate moves. The only other nonzero errors without a rate change come from settlement fallbacks (fewer than five
-valid days), at most $3.11 (HIKE60, extended window).
+error of exactly zero before S is rounded to 0.25, and at most $0.12 after (`err_mid_unrounded` and `err_mid` in
+`processed/futures_trades.csv`). A meeting at which the Fed holds does not break the hedge, because the strike only
+moves when the rate moves. The only other errors without a rate change come from settlement fallbacks (fewer than
+five valid days): at most $3.11 before rounding and $3.01 after (HIKE60, extended window). The table uses the
+rounded settlement.
 
 | Index | No meeting before expiry: RMSE ($) | Fed held: RMSE ($) | Fed moved: RMSE ($) | Fed moved: worst ($) | Effectiveness, all trades |
 |---|---|---|---|---|---|
-| CUT90 | 0.20 (128) | 0.16 (102) | 26.1 (65) | 56.2 | 0.66 |
-| CUT60 | 0.15 (128) | 0.10 (102) | 36.4 (66) | 74.3 | 0.53 |
-| HIKE90 | 0.23 (119) | 0.30 (104) | 14.9 (73) | 50.6 | 0.73 |
-| HIKE60 | 0.51 (126) | 0.01 (102) | 19.5 (73) | 62.9 | 0.52 |
+| CUT90 | 0.22 (128) | 0.20 (102) | 26.1 (65) | 56.2 | 0.66 |
+| CUT60 | 0.16 (128) | 0.12 (102) | 36.4 (66) | 74.4 | 0.53 |
+| HIKE90 | 0.25 (119) | 0.30 (104) | 14.9 (73) | 50.5 | 0.73 |
+| HIKE60 | 0.50 (126) | 0.08 (102) | 19.5 (73) | 62.9 | 0.52 |
 
 The settlement fallback was needed on few expiries, and the backstop never fired:
 
@@ -125,7 +128,7 @@ CUT90, depending on the lead.
 
 **5. The futures price builds in the roll-down that the spot index shows.** F0 sits above spot CUT90, and the gap
 grows with the lead: $1.61 at 7 days, $8.20 at 30 and $17.28 at 90. In this sample a buyer of the CUT90 future lost
-about that gap on average ($0.35 gained at 7 days, $7.83 and $19.73 lost at 30 and 90), because cuts kept arriving
+about that gap on average ($0.33 gained at 7 days, $7.85 and $19.75 lost at 30 and 90), because cuts kept arriving
 later than priced. For HIKE90 the gap is close to zero ($0.25, $0.30, -$0.05).
 
 **6. The sign of the hedge error follows the direction of the move** (`results/futures_error_by_direction.csv`).
@@ -134,14 +137,14 @@ dealer loses a little. No trade in the sample spans moves in both directions.
 
 | Index | Move | Relative to the index | Trades | Mean error ($) | Range ($) | Share where the dealer gains |
 |---|---|---|---|---|---|---|
-| CUT90 | cut | with | 39 | 25.25 | 0.17 to 56.21 | 100% |
-| CUT90 | hike | against | 26 | -2.55 | -6.28 to 0.47 | 4% |
-| CUT60 | cut | with | 40 | 36.28 | 2.03 to 74.30 | 100% |
-| CUT60 | hike | against | 26 | -1.45 | -3.59 to 0.38 | 23% |
-| HIKE90 | cut | against | 47 | -2.07 | -8.65 to 0.97 | 15% |
-| HIKE90 | hike | with | 26 | 20.05 | 3.42 to 50.61 | 100% |
-| HIKE60 | cut | against | 47 | -1.36 | -12.70 to 0.46 | 28% |
-| HIKE60 | hike | with | 26 | 28.51 | 2.42 to 62.93 | 100% |
+| CUT90 | cut | with | 39 | 25.27 | 0.21 to 56.21 | 100% |
+| CUT90 | hike | against | 26 | -2.51 | -6.19 to 0.44 | 4% |
+| CUT60 | cut | with | 40 | 36.28 | 1.95 to 74.35 | 100% |
+| CUT60 | hike | against | 26 | -1.46 | -3.66 to 0.39 | 23% |
+| HIKE90 | cut | against | 47 | -2.08 | -8.59 to 1.05 | 15% |
+| HIKE90 | hike | with | 26 | 20.01 | 3.38 to 50.53 | 100% |
+| HIKE60 | cut | against | 47 | -1.34 | -12.61 to 0.47 | 28% |
+| HIKE60 | hike | with | 26 | 28.55 | 2.37 to 62.86 | 100% |
 
 **7. Event study: on a decision day the index falls when the Fed moves in its direction** (`results/event_study.md`).
 CUT90 and HIKE90 at the close of each of the 29 decision days from 2023-02-02, minus the close of the day before
@@ -199,12 +202,13 @@ are the days when the book had widened (decision 006).
 ## For the spec and the theory (Jay)
 
 1. The static-hedge fair value is exact only for futures that settle before the next change in the target range.
-   For longer futures, F0 is the "no rate change" price. Dealers selling CUT90 futures at F0 gained $3.11 on
-   average before trading costs, and $14.13 on trades with a rate change, mostly those spanning a cut.
+   For longer futures, F0 is the "no rate change" price. Dealers selling CUT90 futures at F0 gained $3.13 on
+   average before trading costs, and $14.16 on trades with a rate change, mostly those spanning a cut.
 2. The spec calendar leaves no decision in any settlement window (the old rule left 5 of 44). It raises the CUT90
    rate-move RMSE from 23.4 to 26.1 and lowers HIKE90's from 16.9 to 14.9 (robustness rows 1 and 5). Report this as a
    result; the rule is justified by definition (decision 007).
 3. The spec fallback settles every expiry. Across the four indices, 143 of 178 expiry settlements used the full
    window, 17 used three or four valid days, 9 the extension and 9 the deferral; the backstop never fired.
-4. Requests R1 to R4 in `docs/TASKS.md`: describe the wide-book mid as the code does, drop or flag the 0.25
-   rounding, fix the reasoning about the extension and decision dates, and add the tail fill to the source hierarchy.
+4. The backtest now follows spec section 5 as written: S rounded to 0.25 (R2 closed) and the extension stopping at
+   the day after the decision (R3 closed). Requests R1 and R4 stay open: spec 5.1 should describe the wide-book mid
+   as the code applies it and add the tail fill, which decision 007 includes.

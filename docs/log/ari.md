@@ -74,3 +74,22 @@ Open issues:
 - Requests R1 to R5 still open. A7 (sections 2, 6, 7) on Monday from numbers.md only.
 Next: stop code changes before Palmer's 11pm tag; A7 Monday.
 
+## 2026-11-15 17:08  main
+Did:
+- Aligned the backtest with Jay's final `docs/spec.md` section 5 (pushed 8b1ce08), Ari's call: S rounded to the
+  nearest 0.25 (halves up), and the extension stops at the day after the most recent decision (decision day not
+  used). `processed/futures_trades.csv` keeps `S_unrounded` and `err_mid_unrounded`. Tests updated (22 index tests).
+- Ari's call on Requests R1 and R4 (spec 5.1 vs decision 007: wide-book wording, tail fill): keep the code, which
+  follows 007 and A2 and is what Palmer's scripts use; Jay aligns the spec text.
+Results (numbers worth keeping, pre-freeze; these replace the 16:51 and 16:59 entries where they differ):
+- The decision-day stop changes 0 of 1,188 settlements.
+- Rounding: hedge error exactly 0 before rounding with a full window and no rate change, at most $0.12 after.
+  Fallback windows without a rate change: at most $3.11 before rounding, $3.01 after. Rate-move RMSE unchanged at
+  one decimal (CUT90 26.1, CUT60 36.4, HIKE90 14.9, HIKE60 19.5); worst $74.35 (CUT60).
+- CUT90 dealer mean error $3.13 over all trades, $14.16 with a rate change. Direction, mean error with the index's
+  direction: CUT90 25.27, CUT60 36.28, HIKE90 20.01, HIKE60 28.55; against: -2.51, -1.46, -2.08, -1.34.
+- CUT90 buyer P&L: +$0.33 (7 days), -$7.85 (30), -$19.75 (90). Costs, capital, basis and the event study unchanged.
+Open issues:
+- R1 and R4 for Jay. R2 and R3 closed by this change. R5 accepted by Palmer.
+Next: no more code changes before the 11pm tag unless Palmer or Jay find a problem. A7 on Monday.
+

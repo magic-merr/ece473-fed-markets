@@ -6,9 +6,9 @@ Contract (decision 007, docs/spec.md sections 3 to 5)
   and the short posts 100 - F. Expiry: last Friday of each month, moved back one week at a time until no
   FOMC decision is in the 5-day settlement window or on the first business day after expiry. S = mean of
   the valid daily index values in the 5 calendar days ending on expiry if at least 3 are valid; else the
-  window extends back (10 days at most, not before the last decision) to 3 valid values; else settlement
-  is deferred to the next valid business day (10 at most); else the last valid value. No rounding of S
-  (007 does not apply the spec's 0.25 rounding; Request R2). Index price rule: `final` (index/legs.py).
+  window extends back (10 days at most, not to or before the last decision) to 3 valid values; else settlement
+  is deferred to the next valid business day (10 at most); else the last valid value. S is rounded to the
+  nearest 0.25 (spec section 5). Index price rule: `final` (index/legs.py).
   The 11/12 terms (Milestone 1 calendar; mean of valid days, else wait up to 14 days) remain available as
   calendar="m1", fallback="ari1112" for the robustness rows.
 
@@ -63,6 +63,7 @@ MAX_SETTLE_WAIT = 14                      # Ari's 11/12 fallback: days to wait i
 SPEC_MIN_VALID = 3                        # spec section 5: at least 3 valid days
 SPEC_MAX_WINDOW = 10                      # spec section 5: extend back to at most 10 calendar days in total
 SPEC_DEFER_BDAYS = 10                     # spec section 5: defer up to 10 business days, then backstop
+SPEC_TICK = 0.25                          # spec section 5: S rounded to the nearest 0.25 index points
 RULE, CALENDAR, FALLBACK = "final", "spec", "spec"   # decision 007; low-level defaults stay 11/12 (see run)
 CAPITAL_RATE = 0.04                       # illustrative opportunity cost for the dollar-day conversion
 RESULTS = build.RESULTS
@@ -104,17 +105,31 @@ def window(expiry: dt.date) -> list[dt.date]:
     return [expiry - dt.timedelta(days=k) for k in range(SETTLE_DAYS - 1, -1, -1)]
 
 
+def round_quarter(x: float) -> float:
+    """Nearest multiple of SPEC_TICK, halves rounded up."""
+    return float(np.floor(x / SPEC_TICK + 0.5) * SPEC_TICK)
+
+
 def settle_spec(imap: dict, expiry: dt.date, data_end: dt.date | None = None) -> dict:
     """Settlement procedure of docs/spec.md section 5 (decision 007), on daily index values in `imap`.
 
     1. At least 3 of the 5 window days valid: S = 100 x mean of the valid days ("full" or "mean_of_valid").
-    2. Else extend the window back one calendar day at a time, to at most 10 days in total, until 3 valid
-       values are found; S = their mean ("extended"). Never before the last decision on or before expiry:
-       the decision day itself counts, because its index is the close after the announcement and so already
-       uses the new target range.
+    2. Else extend the window back one calendar day at a time until 3 valid values are found; S = their mean
+       ("extended"). The extension stops at a total length of 10 days or at the day after the most recent
+       FOMC decision on or before expiry, whichever comes first (spec 5.2 step 3: the decision day itself is
+       not used).
     3. Else defer: the first of the next 10 business days with a valid value settles alone ("deferred").
     4. Else the last valid value on or before expiry ("backstop").
-    Returns S, the days used, the method, and `decided`: the day the settlement value is known."""
+    S is rounded to the nearest 0.25 (halves up); `S_unrounded` keeps the mean. Returns S, S_unrounded, the
+    days used, the method, and `decided`: the day the settlement value is known."""
+    st = _settle_spec_raw(imap, expiry, data_end)
+    if "S" in st:
+        st["S_unrounded"] = st["S"]
+        st["S"] = round_quarter(st["S"])
+    return st
+
+
+def _settle_spec_raw(imap: dict, expiry: dt.date, data_end: dt.date | None = None) -> dict:
     data_end = data_end or legs.data_end()
     ok = lambda d: np.isfinite(imap.get(d, np.nan))  # noqa: E731
     W = window(expiry)
@@ -123,11 +138,11 @@ def settle_spec(imap: dict, expiry: dt.date, data_end: dt.date | None = None) ->
         method = "full" if len(valid) == SETTLE_DAYS else "mean_of_valid"
         return {"S": 100.0 * np.mean([imap[d] for d in valid]), "days": valid, "method": method,
                 "decided": expiry, "window_valid": len(valid)}
-    floor = max((f for f in legs.fomc_dates() if f <= expiry), default=dt.date.min)
+    last_dec = max((f for f in legs.fomc_dates() if f <= expiry), default=dt.date.min)
     used = list(valid)
     for j in range(SETTLE_DAYS, SPEC_MAX_WINDOW):
         d = expiry - dt.timedelta(days=j)
-        if d < floor:
+        if d <= last_dec:
             break
         if ok(d):
             used.append(d)
@@ -239,6 +254,7 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
         if "S" not in st:
             return st
         S, method, settle_days = st["S"], st["method"], st["days"]
+        S_unrounded = st["S_unrounded"]
         last = max(W[-1], st["decided"])
     else:
         raise ValueError(fallback)
@@ -327,6 +343,8 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
         "old_book_legs": old_books, "executable": executable,
         "qty_near": qty["near"], "qty_far": qty["far"],
     }
+    if fallback == "spec":
+        out.update({"S_unrounded": S_unrounded, "err_mid_unrounded": proceeds - S_unrounded})
     if executable:
         tot = sum(sp.values()) + sum(fee.values())
         out.update({
@@ -379,11 +397,14 @@ def _name(h, s):
 
 def _acc(g):
     e, fp = g["err_mid"], g["futures_pnl_long"]
+    extra = ({"max_abs_err_before_rounding": g["err_mid_unrounded"].abs().max()}
+             if "err_mid_unrounded" in g.columns and g["err_mid_unrounded"].notna().any() else {})
     return {"trades": len(g), "expiries": g["expiry"].nunique(),
             "rmse_err": float(np.sqrt((e ** 2).mean())), "mean_err": e.mean(), "max_abs_err": e.abs().max(),
             "share_abs_err_lt_0.5": (e.abs() < 0.5).mean(),
             "rms_futures_pnl": float(np.sqrt((fp ** 2).mean())),
-            "hedge_effectiveness": 1 - (e ** 2).sum() / (fp ** 2).sum() if (fp ** 2).sum() else np.nan}
+            "hedge_effectiveness": 1 - (e ** 2).sum() / (fp ** 2).sum() if (fp ** 2).sum() else np.nan,
+            **extra}
 
 
 def accuracy_by_case(tr):
@@ -539,6 +560,9 @@ def robustness(main_tr, main_sk):
             rows.append({"variant": lab, "index": _name(h, s), "expiries": g["expiry"].nunique(), "trades": len(g),
                          "skipped": nsk,
                          "max_abs_err_no_move": nm["err_mid"].abs().max() if len(nm) else np.nan,
+                         "max_abs_err_no_move_before_rounding": (nm["err_mid_unrounded"].abs().max()
+                                                                 if "err_mid_unrounded" in nm.columns and len(nm)
+                                                                 else np.nan),
                          "rate_move_trades": len(mv),
                          "rmse_err_rate_move": float(np.sqrt((mv["err_mid"] ** 2).mean())) if len(mv) else np.nan,
                          "rmse_err_all": float(np.sqrt((g["err_mid"] ** 2).mean())),

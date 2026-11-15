@@ -172,7 +172,7 @@ def test_rebuild_reproduces_milestone1_index():
 
 def test_real_hedge_exact_unless_rate_moves(real):
     nm = real[(real["case"] != "rate_move") & ~real["fallback"]]
-    assert len(nm) > 500 and nm["err_mid"].abs().max() < 1e-9
+    assert len(nm) > 500 and nm["err_mid_unrounded"].abs().max() < 1e-9
 
 
 def test_real_trades_recomputed_independently(real):
@@ -189,7 +189,7 @@ def test_real_trades_recomputed_independently(real):
         vals = [v for v in vals if np.isfinite(v)]
         if t.settle_waited or len(vals) < 5:
             continue
-        assert t.S == pytest.approx(100 * np.mean(vals))
+        assert t.S_unrounded == pytest.approx(100 * np.mean(vals)) and t.S == F.round_quarter(t.S_unrounded)
         proceeds = 0.0
         for d in win:
             m1, m2, w = build.bracket(d, t.horizon)
@@ -198,6 +198,7 @@ def test_real_trades_recomputed_independently(real):
                 y = r.value if np.isfinite(r.value) else F.mark((r.value, r.bid, r.ask, r.source, r.quote_age))[0]
                 proceeds += 20 * x * ((1 - y) if t.side == "cut" else y)
         assert t.err_mid == pytest.approx(proceeds - t.S, abs=1e-9)
+        assert t.err_mid_unrounded == pytest.approx(proceeds - t.S_unrounded, abs=1e-9)
         checked[t.case] = checked.get(t.case, 0) + 1
     assert all(checked.get(c, 0) >= 3 for c in ("no_meeting", "meeting_hold", "rate_move")), checked
 
@@ -248,6 +249,10 @@ def test_settle_spec_full_and_mean_of_valid():
     assert st["method"] == "full" and st["S"] == pytest.approx(30.0)
     st = F.settle_spec(_imap({W[0]: 0.2, W[2]: 0.4, W[4]: 0.9, W[1]: np.nan}), E0)
     assert st["method"] == "mean_of_valid" and st["S"] == pytest.approx(50.0) and st["days"] == [W[0], W[2], W[4]]
+    # spec section 5: S rounded to the nearest 0.25, halves up; the unrounded mean is kept
+    st = F.settle_spec(_imap({W[0]: 0.4012, W[1]: 0.4013, W[2]: 0.4014}), E0)
+    assert st["S_unrounded"] == pytest.approx(40.13) and st["S"] == 40.25
+    assert F.round_quarter(40.125) == 40.25 and F.round_quarter(40.124) == 40.0
 
 
 def test_settle_spec_extended_takes_three_most_recent():
@@ -263,14 +268,17 @@ def test_settle_spec_extended_takes_three_most_recent():
 
 
 def test_settle_spec_extension_stops_at_a_decision(monkeypatch):
+    """Spec 5.2 step 3: the extension stops at the day after the most recent decision (decision day not used)."""
     dec = E0 - dt.timedelta(days=7)
     monkeypatch.setattr(legs, "fomc_dates", lambda: (dec,))
     v = {E0: 0.6, dec: 0.2, E0 - dt.timedelta(days=8): 0.9, E0 + dt.timedelta(days=3): 0.4}
     st = F.settle_spec(_imap(v), E0)
-    assert st["method"] == "deferred" and st["S"] == pytest.approx(40.0)   # E-8 is before the decision
-    v[E0 - dt.timedelta(days=5)] = 0.3                                      # third valid day after it
+    assert st["method"] == "deferred" and st["S"] == pytest.approx(40.0)   # decision day and earlier not used
+    v[E0 - dt.timedelta(days=5)] = 0.3
+    v[E0 - dt.timedelta(days=6)] = 0.1                                      # the day after the decision
     st = F.settle_spec(_imap(v), E0)
-    assert st["method"] == "extended" and dec in st["days"] and st["S"] == pytest.approx(100 * (0.6 + 0.3 + 0.2) / 3)
+    assert st["method"] == "extended" and dec not in st["days"]
+    assert st["S_unrounded"] == pytest.approx(100 * (0.6 + 0.3 + 0.1) / 3) and st["S"] == 33.25
 
 
 def test_settle_spec_deferred_uses_business_days_then_backstop():
@@ -300,15 +308,18 @@ def test_spec_fallback_hedge_is_causal(syn):
         for m, x in ((m1, w), (m2, 1 - w)):
             proceeds += 20 * x * (1 - yes_price(m, 4.25, sale))
     S = 100 * np.mean([im[d] for d in F.window(E) if d != gap])
-    assert t["S"] == pytest.approx(S) and t["err_mid"] == pytest.approx(proceeds - S)
+    assert t["S_unrounded"] == pytest.approx(S) and t["err_mid_unrounded"] == pytest.approx(proceeds - S)
+    assert t["S"] == F.round_quarter(S) and t["err_mid"] == pytest.approx(proceeds - F.round_quarter(S))
     # same trade under the 11/12 fallback sells the same way (a later valid day exists)
     t2 = F.hedge_trade(book, im, 90, "cut", E, t0, fallback="ari1112")
-    assert t2["err_mid"] == pytest.approx(t["err_mid"])
+    assert t2["err_mid"] == pytest.approx(t["err_mid_unrounded"])          # 11/12 fallback does not round
 
 
 def test_final_config_exact_without_rate_change(real):
     full = real[(real["case"] != "rate_move") & (real["settle_method"] == "full")]
-    assert len(full) > 400 and full["err_mid"].abs().max() < 1e-9
+    assert len(full) > 400 and full["err_mid_unrounded"].abs().max() < 1e-9
+    assert full["err_mid"].abs().max() <= F.SPEC_TICK / 2 + 1e-9                 # only the 0.25 rounding
+    assert np.allclose(real["S"], [F.round_quarter(x) for x in real["S_unrounded"]])
     assert set(real["settle_method"]) <= {"full", "mean_of_valid", "extended", "deferred", "backstop"}
     assert real["expiry"].nunique() == 45 and not real["decision_in_window"].any()
 
