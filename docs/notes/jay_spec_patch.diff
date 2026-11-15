@@ -1,0 +1,194 @@
+diff --git a/docs/TASKS.md b/docs/TASKS.md
+index 5fe8522..22c1803 100644
+--- a/docs/TASKS.md
++++ b/docs/TASKS.md
+@@ -51,7 +51,7 @@ because their Claude session will not see it until they pull.
+ | J1 | Read 007. Jay decides; add the "Accepted by" line (or write objections in `docs/log/jay.md` and message Palmer). Push alone | pushed | Sun 6pm | done 11/15 16:5x, signed with two notes (see 007 and R1) |
+ | J2 | `docs/spec.md` to final: section 5 source hierarchy per 007 (book under the rule, wide-book mid, 3-day carry; composite removed, 006 point 3); close the composite [open] item; section 4 justified by definition, remove "the RMSE should fall"; collision counts per 007 (cite 5 of 44); rewrite section 10; status line to final | pushed | Sun 8pm | done 11/15 17:4x. Also added the decision-date stop to the 5.2 extension (see R1). No [open] items remain |
+ | J3 | `docs/theory.md` (old TASKS 9, 14, 20): static hedge exact iff no target-range change before expiry, with proof; fair value as the fixed-weight blend minus a bounded settlement discount; reset adjustment F_adj = F0 - p_dir x G and why it fits CUT but overstates HIKE (`docs/notes/reset_adjustment.md`); continuity between announcements. Numbers as `{{numbers.md}}` placeholders until the tag | draft pushed | Sun 9:30pm | done 11/15 17:4x, all empirical numbers are `{{numbers.md: key}}` placeholders |
+-| J4 | After A4: rerun `theory/noarb.py`; update `theory/README.md` only if a number moved | pushed | Sun 10:30pm | blocked on A4. Note: `noarb.py` reads only `index_m1/` frozen data and `fomc_calendar.csv`, so A4 cannot move its numbers. Rerun on 11/15 after J2/J3 reproduced them exactly. The post-A4 run is a confirmation |
++| J4 | After A4: rerun `theory/noarb.py`; update `theory/README.md` only if a number moved | pushed | Sun 10:30pm | done 11/15: reran `theory/noarb.py` at `fb94863`, every number reproduces, `theory/README.md` unchanged |
+ | J5 | Fill `theory.md` placeholders from `numbers.md` | pushed | Mon 10am | blocked on P5. Placeholder keys are listed in `docs/log/jay.md` 11/15 so P5 can use the same names |
+ | J6 | Sections 1, 4, 5 | drafts in `sections/` | Mon 1pm | drafts done 11/15 17:4x, placeholders throughout. Review after `numbers.md` (J5) |
+ 
+@@ -59,12 +59,12 @@ because their Claude session will not see it until they pull.
+ 
+ | # | From | To | Request | Status |
+ |---|---|---|---|---|
+-| R1 | Ari | Jay | 007 F1. `docs/spec.md` section 5: describe the wide-book mid as the code does. It replaces the last-trade price on a book that is two-sided, quoted within 3 days and wider than 10c (`src/settlement_check.py::wide_mid_days`, A2). A wide book with no trade in 3 days still has no price (108 of 7,192 index-leg days from 2023-02-02). 007's wording ("any two-sided book") is broader than the code | open |
++| R1 | Ari | Jay | 007 F1. `docs/spec.md` section 5: describe the wide-book mid as the code does. It replaces the last-trade price on a book that is two-sided, quoted within 3 days and wider than 10c (`src/settlement_check.py::wide_mid_days`, A2). A wide book with no trade in 3 days still has no price (108 of 7,192 index-leg days from 2023-02-02). 007's wording ("any two-sided book") is broader than the code | closed 11/15 (Jay): spec 5.1 step 2 now matches `wide_mid_days` (book two-sided, quoted within 3 days, wider than 10c, trade within 3 days) |
+ | R2 | Ari | Jay | 007 F2. Spec section 5 rounds S to the nearest 0.25; 007 and A3 do not, so the backtest does not round. Drop the rounding or say it is untested (it would add up to $0.125 of hedge error) | closed 11/15 (Ari): the backtest now rounds S to 0.25 as the spec says; error before rounding kept |
+ | R3 | Ari | Jay | 007 F3. Spec section 5 says the 10-day extension never reaches a decision "because section 4 keeps decisions out of the window". Not so: 11 of 45 final-calendar expiries have a decision exactly 9 days before expiry, the first day the extension can reach. The backtest counts the decision day (its close is after the announcement) and never goes earlier, so the guard never binds. Please fix the reasoning | closed 11/15 (Ari): the spec now gives the day-after-decision stop; the backtest follows it (changes 0 settlements) |
+-| R4 | Ari | Jay | 007 F4. The tail fill is part of the 007 rule but not of spec section 5's source hierarchy ("carried forward up to three days", "no fourth branch"). 437 of 7,192 index-leg days from 2023-02-02 carry a pinned price beyond 3 days. Please add it as a branch | open |
++| R4 | Ari | Jay | 007 F4. The tail fill is part of the 007 rule but not of spec section 5's source hierarchy ("carried forward up to three days", "no fourth branch"). 437 of 7,192 index-leg days from 2023-02-02 carry a pinned price beyond 3 days. Please add it as a branch | closed 11/15 (Jay): tail fill added as spec 5.1 step 5; "never older than three days" now excepts it |
+ | R5 | Ari | Palmer | 007 F5. The final expiry calendar has 45 expiries, not 44: 2026-10-30 moves back to 2026-10-23, inside the data (your `settlement_check.py` already has 45). "5 of 44 move" is still right for the old calendar. `numbers.md` should give 45 for the final sample | closed 11/15 (Palmer): `numbers.md` gives `sample_expiries` = 45 and `expiries_moved_old_calendar` = 5 of 44 |
+-| R6 | Palmer | Jay | P5 check of `docs/spec.md` (at `8b1ce08`) against `numbers.md`. Numbers only, no rule change. (a) Section 4: "The report cites 5 of 44". The final backtest has 45 expiries (`sample_expiries`); 5 of 44 is the old-calendar move count (`expiries_moved_old_calendar`), plus 2026-10-30 moving to 2026-10-23. (b) 5.2 opening: "about one CUT90 settlement in five" has fewer than five valid days. Final run: 23% of CUT90 trades (`share_settle_not_full_cut90`), 35 of 178 settlements across the four indices (`settle_full` 143 of 178). (c) 5.2 paragraph: "11 of the 44 expiries" is 11 of 45 on the final calendar (checked: the only decision within reach of the extension is exactly 9 days before expiry). (d) Last paragraph of the spec: the R1-to-Ari note is out of date. The deferral test exists (`index/tests/test_futures.py::test_settle_spec_extension_stops_at_a_decision`), and R1 in this table is Ari's request to you. (e) Replace each "pre-freeze" citation with its key, e.g. 9% to 24% is `drop_trade_lt3_cut90`. (f) The 10% to 130% carry is now `discount_implied_carry`, sourced from `theory/README.md` prose only. Fine as is, or add it to `noarb_summary.md`. Checked and fine: the RMSE direction in section 4 (rises for CUT90 and CUT60, falls for HIKE90 and HIKE60 on the final run) and the ladder numbers in section 7 | open |
++| R6 | Palmer | Jay | P5 check of `docs/spec.md` (at `8b1ce08`) against `numbers.md`. Numbers only, no rule change. (a) Section 4: "The report cites 5 of 44". The final backtest has 45 expiries (`sample_expiries`); 5 of 44 is the old-calendar move count (`expiries_moved_old_calendar`), plus 2026-10-30 moving to 2026-10-23. (b) 5.2 opening: "about one CUT90 settlement in five" has fewer than five valid days. Final run: 23% of CUT90 trades (`share_settle_not_full_cut90`), 35 of 178 settlements across the four indices (`settle_full` 143 of 178). (c) 5.2 paragraph: "11 of the 44 expiries" is 11 of 45 on the final calendar (checked: the only decision within reach of the extension is exactly 9 days before expiry). (d) Last paragraph of the spec: the R1-to-Ari note is out of date. The deferral test exists (`index/tests/test_futures.py::test_settle_spec_extension_stops_at_a_decision`), and R1 in this table is Ari's request to you. (e) Replace each "pre-freeze" citation with its key, e.g. 9% to 24% is `drop_trade_lt3_cut90`. (f) The 10% to 130% carry is now `discount_implied_carry`, sourced from `theory/README.md` prose only. Fine as is, or add it to `noarb_summary.md`. Checked and fine: the RMSE direction in section 4 (rises for CUT90 and CUT60, falls for HIKE90 and HIKE60 on the final run) and the ladder numbers in section 7 | closed 11/15 (Jay): 45 expiries, 23% and 35 of 178, 11 of 45, R1 note removed, citations by `numbers.md` key |
+ 
+ ---
+ 
+diff --git a/docs/log/jay.md b/docs/log/jay.md
+index a8e00d7..dd495f9 100644
+--- a/docs/log/jay.md
++++ b/docs/log/jay.md
+@@ -94,3 +94,15 @@ Open issues:
+ 
+ Next: J4 once Ari messages that A4 is pushed, then J5 from `numbers.md`, then a review pass on sections 1, 4
+ and 5 Monday morning.
++
++## 2026-11-15 18:00  main
++Did:
++- J4: reran `theory/noarb.py` at `fb94863`. Every number reproduces; `theory/README.md` unchanged.
++- `docs/spec.md`: closed R1, R4 and R6. Section 5.1 now states the rule exactly as the code applies it (wide-book
++  mid only where a trade printed within 3 days; last trade also when the book has not been quoted in 3 days;
++  tail fill as step 5). Numbers updated to the final run (45 expiries, 11 of 45, 23% of CUT90 trades and 35 of
++  178 settlements below five valid days) and cited by `numbers.md` key. Edits drafted by Palmer's session from
++  the code and `numbers.md`; reviewed and applied by Jay.
++Results (numbers worth keeping): none new.
++Open issues: none on the spec.
++Next: J5 (fill `{{numbers.md: key}}` placeholders in `theory.md` and sections 1, 4, 5), then review Monday.
+diff --git a/docs/spec.md b/docs/spec.md
+index 0074b14..3a3a4df 100644
+--- a/docs/spec.md
++++ b/docs/spec.md
+@@ -7,9 +7,9 @@ the index is decision 002, with its reasoning in 005 and its wide-book branch in
+ 007. Where this file and the Milestone 1 report section 5 disagree, this file is current, and section 9 lists
+ every change.
+ 
+-Numbers produced by the backtest are cited by result file and marked pre-freeze until
+-`docs/reports/final/numbers.md` exists (CLAUDE.md sprint rule 7). The counts in sections 4 and 7 come from
+-`theory/noarb.py`, which reads only the frozen Milestone 1 data and does not move with the rerun.
++Numbers produced by the backtest are cited by their key in `docs/reports/final/numbers.md` (CLAUDE.md sprint
++rule 7). The counts in sections 4 and 7 come from `theory/noarb.py`, which reads only the frozen Milestone 1
++data and does not move with the rerun.
+ 
+ ## 1. What the product is
+ 
+@@ -92,14 +92,17 @@ Checked against `index_m1/data/fomc_calendar.csv` by `theory/noarb.py`:
+ | Mar 2022 to Dec 2026 | 58 | 7 | 0 |
+ 
+ The three counts are the same rule over different month ranges, which closes TASK 17 (decision 006, decision
+-007). **The report cites 5 of 44**, the backtest sample. Those five expiries are 2023-07, 2025-01, 2025-10,
+-2026-01 and 2026-07, each moved back one week. Stepping back one week never creates a new collision in this
+-window, because scheduled meetings are at least five weeks apart.
++007). **The report cites 5 of 44** for the old calendar over the backtest months (`numbers.md`:
++`expiries_moved_old_calendar`). Those five expiries are 2023-07, 2025-01, 2025-10, 2026-01 and 2026-07, each
++moved back one week. Stepping back one week never creates a new collision in this window, because scheduled
++meetings are at least five weeks apart. On the final calendar the backtest has 45 expiries (`sample_expiries`),
++because 2026-10-30 also moves, to 2026-10-23, which falls inside the data.
+ 
+ Moving those five expiries does not reduce hedge error, and the report should not claim it does. Decision 006
+-measured the rate-move RMSE rising for CUT90 and CUT60 and falling for HIKE90 and HIKE60 (pre-freeze,
+-`results/settlement_rule_check.md`). The reason is that the moved trades had partial resets, and shifting the
+-expiry changes which entries see a full one. That is a result to report in section 7, not an argument for or
++measured the rate-move RMSE rising for CUT90 and CUT60 and falling for HIKE90 and HIKE60, and the final run
++shows the same (`numbers.md`: `rob_main_cut90` against `rob_m1_calendar_cut90`). The reason is that the moved
++trades had partial resets, and shifting the expiry changes which entries see a full one. That is a result to
++report in section 7, not an argument for or
+ against this rule.
+ 
+ ## 5. Settlement
+@@ -120,17 +123,24 @@ with the wide-book branch from decision 006.
+ 1. **Book.** The standing two-sided Kalshi book for that meeting and strike, priced under the decision 002
+    rule: the mid when the book is no wider than $0.10, and the bound midpoint when one side is pinned at 0 or
+    1.
+-2. **Wide book.** The book is two-sided and was quoted within three days but is wider than $0.10. The leg is
+-   priced at the **mid of the standing book**. This is decision 006 point 1. It replaces decision 005 point 3,
+-   which would have dropped these days: dropping them raises the share of CUT90 settlements with fewer than
+-   three valid days from 9% to 24%, so one settlement in four would need the extension below (pre-freeze,
+-   `results/settlement_rule_check.md`).
+-3. **Last trade.** Used only when the book is not two-sided.
++2. **Wide book.** The book is two-sided and was quoted within three days but is wider than $0.10, and a trade
++   printed within three days. Where the decision 002 rule would take that last trade, the leg is priced at the
++   **mid of the standing book** instead. This is decision 006 point 1. It replaces decision 005 point 3, which
++   would have dropped these days: dropping them raises the share of CUT90 settlements with fewer than three
++   valid days from 9% to 24% (`numbers.md`: `drop_trade_lt3_cut90`). A wide book with no trade in the last three
++   days gets no price from this step.
++3. **Last trade.** A trade within three days, used only when the book is not two-sided or has not been quoted
++   within three days.
+ 4. **Carry forward.** The last price from 1 to 3, up to three days old. This is the `N = 3` freshness test in
+    decision 002.
++5. **Tail fill.** If none of 1 to 4 applies, a leg whose last usable price was at or below $0.03 or at or above
++   $0.97 keeps that price, however old it is. Failing that, a one-sided book still pinned at a tail (no bid and
++   an ask at or below $0.03, or no ask and a bid at or above $0.97) is priced at the midpoint of its bound. This
++   is the tail fill in the decision 007 rule. It only covers contracts that are close to certain, where a
++   stale price cannot be far from the truth.
+ 
+-If none applies, the leg has no price, the day is not valid, and settlement goes to the fallback below. There
+-is no fifth branch. The contract never settles on a price older than three days.
++If none applies, the leg has no price, the day is not valid, and settlement goes to the fallback below. Apart
++from the tail fill in step 5, the contract never settles on a price older than three days.
+ 
+ There is **no composite Kalshi and Polymarket price** in the settlement rule (decision 006 point 3). Polymarket
+ publishes no historical order books, so its freshness cannot be tested against the three-day rule, and it lists
+@@ -140,8 +150,8 @@ draft of this file.
+ 
+ ### 5.2 Fallback when the window has too few valid days
+ 
+-This matters: about one CUT90 settlement in five has fewer than five valid days even under the rule above
+-(pre-freeze, `results/settlement_rule_check.md`).
++This matters: 23% of CUT90 trades settle on fewer than five valid days even under the rule above, and across
++the four indices 35 of 178 expiry settlements do (`numbers.md`: `share_settle_not_full_cut90`, `settle_full`).
+ 
+ 1. If at least three of the five days are valid, `S` is the mean of the valid days.
+ 2. Otherwise extend the window backwards one calendar day at a time until three valid values are available,
+@@ -156,7 +166,7 @@ This matters: about one CUT90 settlement in five has fewer than five valid days
+    value before expiry. This backstop does not fire in our sample. A live venue would instead settle by
+    committee determination.
+ 
+-The decision-date stop in step 3 is a real constraint, not a formality. In 11 of the 44 expiries in the
++The decision-date stop in step 3 is a real constraint, not a formality. In 11 of the 45 expiries in the
+ backtest sample a decision falls exactly nine days before expiry, inside a ten-day extension: March and
+ September of every year, plus December 2024 and June 2025. In those months the extension can reach back only
+ to the day after the decision, so it may stop short of three valid days and settlement defers under step 4.
+@@ -174,7 +184,7 @@ sum to $1.
+ 
+ The cost of that safety is the time value of the locked collateral, and it is small next to trading cost: on
+ the order of a dollar per contract at a 90-day lead against five to eight dollars of round-trip hedge cost
+-(pre-freeze, `index/results/futures_backtest.md`, result 4). Collateral is not what makes this product
++(`numbers.md`: `capital_cost_90d`, `hedge_cost_cut90`). Collateral is not what makes this product
+ expensive. The far hedge leg is.
+ 
+ ## 7. Index inputs and no-arbitrage
+@@ -209,7 +219,8 @@ A buyer of this future is not holding a riskless position, and the dealer's stat
+ the Fed holds does not break it, because the index strike moves only when the rate moves. The Milestone 1
+ planning note expected exactness to require "no meeting before expiry". That is too narrow, and Ari's backtest
+ shows the correct condition is no rate change: trades with a meeting that held have the same near-zero error as
+-trades with no meeting at all (pre-freeze, `index/results/futures_backtest.md`, result 1).
++trades with no meeting at all (`numbers.md`: `cut90_rmse_held`, `cut90_rmse_no_meeting`,
++`max_err_full_window_no_move`).
+ 
+ The failure is mechanical. The hedge holds contracts struck at the old `U`. After a move the index switches to
+ a strike one notch away, and the two stop being the same quantity. The sign is predictable: the dealer gains
+@@ -220,8 +231,8 @@ correction `F_adj = F0 - p_dir x G`.
+ Two consequences for the product:
+ 
+ - Short-dated contracts are close to exactly hedgeable. The share of CUT90 trades with no meeting before expiry
+-  falls with the lead and reaches zero from 45 days on (pre-freeze,
+-  `index/results/futures_backtest.md`, result 2).
++  falls with the lead and reaches zero from 45 days on (`numbers.md`:
++  `no_meeting_share_cut90_by_lead`).
+ - A contract listed more than about six weeks before expiry carries rate-change risk the static hedge does not
+   cover, and the buyer pays for it in the basis. This is why section 3 lists only the three nearest monthly
+   expiries.
+@@ -231,9 +242,9 @@ Two consequences for the product:
+ | Term | Milestone 1 report section 5 | Here | Why |
+ |---|---|---|---|
+ | Expiry adjustment | Move one week if within one business day of a decision | Move one week, repeatedly, until no decision is in the settlement window or on the next business day | The old rule never fires for a Wednesday decision before a Friday expiry. Section 4 |
+-| Missing settlement days | Drop from the mean, no minimum | Three of five valid, then a bounded extension, then deferral | About one CUT90 settlement in five has fewer than five valid days. Section 5.2 |
++| Missing settlement days | Drop from the mean, no minimum | Three of five valid, then a bounded extension, then deferral | 23% of CUT90 trades settle on fewer than five valid days (`share_settle_not_full_cut90`). Section 5.2 |
+ | Extension across a decision | Not considered | Explicit stop at the day after a decision | Index values on the two sides of a decision are not the same quantity. Section 5.2 |
+-| Leg price source | Not stated | Four-step hierarchy, with a wide two-sided book priced at the mid | Decisions 002, 005, 006, 007. Section 5.1 |
++| Leg price source | Not stated | Five-step hierarchy: a wide two-sided book priced at the mid, and a tail fill for near-certain contracts | Decisions 002, 005, 006, 007. Section 5.1 |
+ | Composite venue price | Raised as an option | Not used in settlement | Decision 006 point 3. Section 5.1 |
+ | Quotation increment | Not stated | 0.25 index points | The ladder prices in whole cents and the index is a weighted average of two of them |
+ | Listed expiries | Not stated | The three nearest months | Beyond that the static hedge does not hold. Section 8 |
+@@ -252,5 +263,6 @@ Two things sit outside it and belong to other sections of the report:
+ - Position limits, listing fees and venue rules are not specified, because no result in the report depends on
+   them.
+ 
+-One request is outstanding: **R1** in `docs/TASKS.md` asks Ari to test the deferral branch in section 5.2
+-step 4, since the decision-date stop binds in 11 of the 44 expiries.
++No request on this file is open. R1 and R4 (section 5.1 now states the rule exactly as the code applies it) and
++R6 (numbers cited by `numbers.md` key) are closed. The deferral branch in section 5.2 step 4 is tested in
++`index/tests/test_futures.py::test_settle_spec_extension_stops_at_a_decision`.
