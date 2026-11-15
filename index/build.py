@@ -1,4 +1,4 @@
-"""CUT/HIKE constant-maturity index (decision 003) on the data-layer price rule, any horizon.
+"""CUT/HIKE constant-maturity index (decision 003) on the decision 007 price rule (`final`), any horizon.
 
   U_t      upper bound after every decision announced on or before day t (realized_upper_bound.csv)
   C_m(t)   1 - Y_m(U_t - 0.25, t)   probability the upper bound after meeting m is below U_t
@@ -9,7 +9,7 @@
 At the zero lower bound (U_t <= 0.25) a cut is impossible and C = 0, as in Milestone 1.
 
 Outputs
-  processed/index_daily.csv       H = 90, src rule, decision-003 columns:
+  processed/index_daily.csv       H = 90, rule `final` (decision 007), decision-003 columns:
                                   date, ub, m1, m2, d1, d2, w, C1, C2, H1, H2, CUT90, HIKE90, any_stale,
                                   announcement, source  (+ per-leg price sources)
   processed/index_daily_h60.csv   same for H = 60 (columns CUT60, HIKE60)
@@ -30,7 +30,8 @@ PROCESSED = legs.ROOT / "processed"
 RESULTS = legs.ROOT / "index" / "results"
 SAMPLE_START = dt.date(2023, 2, 2)     # decision 002: main sample from the Feb 2023 meeting
 EXT_START = dt.date(2022, 3, 17)       # Milestone 1 main sample (first day off the zero lower bound)
-FRESH = {"quote", "bound", "trade"}    # src-rule sources that use a fresh price
+FRESH = {"quote", "bound", "trade", "wide_mid"}   # sources that use a price seen within N = 3 days
+RULE = "final"                         # decision 007
 
 
 def ub_at(d: dt.date) -> float:
@@ -69,7 +70,7 @@ def leg(book: legs.Book, m, k, d, kind: str, u: float):
     return (1 - y if kind == "C" else y), src
 
 
-def build_index(rule: str = "src", horizon: int = 90, start: dt.date | None = None,
+def build_index(rule: str = RULE, horizon: int = 90, start: dt.date | None = None,
                 end: dt.date | None = None, book: legs.Book | None = None) -> pd.DataFrame:
     book = book or legs.book(rule)
     start = start or dt.date(2021, 7, 2)
@@ -92,7 +93,7 @@ def build_index(rule: str = "src", horizon: int = 90, start: dt.date | None = No
     cut, hike = f"CUT{horizon}", f"HIKE{horizon}"
     ix[cut] = ix["w"] * ix["C1"] + (1 - ix["w"]) * ix["C2"]
     ix[hike] = ix["w"] * ix["H1"] + (1 - ix["w"]) * ix["H2"]
-    good = FRESH | {"zlb"} if rule == "src" else {"quote", "zlb"}
+    good = FRESH | {"zlb"} if rule in ("src", "final") else {"quote", "zlb"}
     srcs = ix[["C1_src", "C2_src", "H1_src", "H2_src"]]
     ix["any_stale"] = ~srcs.isin(good).all(axis=1)
     ix["announcement"] = ix["date"].isin(ann)
@@ -122,9 +123,9 @@ def compare_to_m1(ix: pd.DataFrame, start=SAMPLE_START) -> pd.DataFrame:
 def main():
     PROCESSED.mkdir(exist_ok=True)
     RESULTS.mkdir(parents=True, exist_ok=True)
-    ix90 = build_index("src", 90)
+    ix90 = build_index(RULE, 90)
     ix90.to_csv(PROCESSED / "index_daily.csv", index=False)
-    ix60 = build_index("src", 60)
+    ix60 = build_index(RULE, 60)
     ix60.to_csv(PROCESSED / "index_daily_h60.csv", index=False)
     cmp_ = compare_to_m1(ix90)
     cmp_.to_csv(RESULTS / "index_vs_m1.csv", index=False)

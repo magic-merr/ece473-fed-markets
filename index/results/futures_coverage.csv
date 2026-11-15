@@ -1,5 +1,5 @@
-index,ok,no_entry_price,no_exit_price,no_settlement
-CUT60,288,4,2,7
-HIKE60,294,7,0,0
-CUT90,287,5,2,7
-HIKE90,283,11,0,7
+index,ok,no_entry_price,no_exit_price
+CUT60,296,5,7
+HIKE60,301,7,0
+CUT90,295,6,7
+HIKE90,296,12,0

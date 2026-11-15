@@ -1,0 +1,5 @@
+index,ok,no_entry_price,no_exit_price,no_settlement
+CUT60,288,4,2,7
+HIKE60,294,7,0,0
+CUT90,287,5,2,7
+HIKE90,283,11,0,7

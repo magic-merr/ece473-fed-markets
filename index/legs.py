@@ -7,10 +7,15 @@ Inputs (committed, nothing is re-pulled):
   index_m1/data/realized_upper_bound.csv    upper bound after each meeting, from settled ladders
   index_m1/data/fomc_calendar.csv           scheduled decision dates
 
-Two price rules, so the final tables can show what the cleaning rule changes (decision 002):
+Three price rules (decision 007 fixes `final` for the report; the other two are robustness rows):
+  "final" decision 007: the `src` rule below, except that a leg the `src` rule prices from the last trade
+         is priced at the book mid when the book is two-sided (bid > 0, ask < 1) and was quoted within
+         N = 3 days, i.e. a fresh book wider than S (decision 006 point 1; source `wide_mid`). The trade
+         branch is then used only when the book is not two-sided. Same logic as
+         src/settlement_check.py::wide_mid_days, applied after the tail fill exactly as there.
   "src"  Palmer's data-layer rule (src/stale.py): quote -> bound -> trade -> stale, N = 3 days,
-         S = $0.10, tick-floor bound on, plus the tail fill used for aggregation. Proposed for the final
-         report in decision 002.
+         S = $0.10, tick-floor bound on, plus the tail fill used for aggregation (decision 002). This is the
+         pre-006 rule with the trade branch.
   "m1"   the Milestone 1 rule (index_m1/build_index.py): mid if spread <= $0.10, else missing; last mid
          carried forward up to 10 days.
 Execution always uses the standing Kalshi book (last observed bid/ask), whatever the index rule.
@@ -88,6 +93,12 @@ def contract_days(rule: str = "src", n_days: int = STALE_N_DAYS, max_spread: flo
                   tick_bound: bool = KALSHI_TICK_BOUND) -> pd.DataFrame:
     """One row per contract-day up to the day before its meeting: index price (`value`, YES side, NaN if
     unusable under `rule`), standing yes bid/ask, quote age, and the price source."""
+    if rule == "final":
+        cd = contract_days("src", n_days, max_spread, tick_bound).copy()
+        wide = (cd["source"] == "trade") & (cd["bid"] > 0) & (cd["ask"] < 1) & (cd["quote_age"] <= n_days)
+        cd.loc[wide, "value"] = (cd.loc[wide, "bid"] + cd.loc[wide, "ask"]) / 2
+        cd.loc[wide, "source"] = "wide_mid"
+        return cd
     end_all = data_end()
     out = []
     for m in markets().itertuples(index=False):
@@ -139,5 +150,5 @@ class Book:
 
 
 @lru_cache(maxsize=None)
-def book(rule: str = "src") -> Book:
+def book(rule: str = "final") -> Book:
     return Book(contract_days(rule))

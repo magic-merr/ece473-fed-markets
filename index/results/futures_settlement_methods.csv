@@ -1,0 +1,5 @@
+index,expiries,full,mean_of_valid,extended,deferred,backstop
+CUT60,44,38,3,2,1,0
+HIKE60,45,38,3,3,1,0
+CUT90,44,34,5,3,2,0
+HIKE90,45,33,6,1,5,0

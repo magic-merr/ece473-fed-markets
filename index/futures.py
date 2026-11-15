@@ -1,18 +1,25 @@
 """Futures on the constant-maturity index: fair value from the static hedge, and a backtest of the
 future against that hedge (tracking, trading cost, capital), for H = 90 and H = 60.
 
-Contract (Milestone 1 draft, report section 5; Jay finalizes in docs/spec.md)
+Contract (decision 007, docs/spec.md sections 3 to 5)
   Pays $1 per index point: $100 x settlement value S. Fully collateralized: at price F the long posts F
-  and the short posts 100 - F. Expiry: last Friday of each month, moved to the prior Friday if within one
-  business day of an FOMC decision. S = mean of the daily index over the 5 calendar days ending on expiry;
-  days without a valid index value drop out of the mean (no valid day at all: no settlement, skipped).
+  and the short posts 100 - F. Expiry: last Friday of each month, moved back one week at a time until no
+  FOMC decision is in the 5-day settlement window or on the first business day after expiry. S = mean of
+  the valid daily index values in the 5 calendar days ending on expiry if at least 3 are valid; else the
+  window extends back (10 days at most, not before the last decision) to 3 valid values; else settlement
+  is deferred to the next valid business day (10 at most); else the last valid value. No rounding of S
+  (007 does not apply the spec's 0.25 rounding; Request R2). Index price rule: `final` (index/legs.py).
+  The 11/12 terms (Milestone 1 calendar; mean of valid days, else wait up to 14 days) remain available as
+  calendar="m1", fallback="ari1112" for the robustness rows.
 
 Natural hedge (static; docs/notes/futures_pricing.md)
   On each settlement day d the index is w(d) C_m1(d)(d) + (1 - w(d)) C_m2(d)(d) at strike U_d - 0.25 (cut)
   or U_d (hike). Meeting dates are known, so m1(d), m2(d) and w(d) are known at entry t. The dealer who
   sells the future at t buys, for every settlement day d, 20 x w(d) units of meeting m1(d)'s contract and
-  20 x (1 - w(d)) of m2(d)'s, all at today's strike, and sells day d's tranche at the close of d (a day
-  without a valid index value: its tranche is sold on the next valid day, else the last valid one).
+  20 x (1 - w(d)) of m2(d)'s, all at today's strike, and sells day d's tranche at the close of d. A day
+  without a valid index value: its tranche is sold on the next valid window day, else on the day the
+  settlement value is known (expiry, or the deferred or backstop day). The 11/12 fallback instead sold it on
+  the next valid day, else the last valid one.
   Usually two contracts in total, three when the window straddles a bracket roll.
   Fair value F0 = what the hedge costs at the index's own prices on day t.
   If the upper bound does not change between t and expiry, the hedge holds exactly what the index prices,
@@ -52,22 +59,42 @@ SIDES = ("cut", "hike")
 LEADS = (7, 14, 21, 30, 45, 60, 90)       # calendar days from entry to expiry
 SETTLE_DAYS = 5
 HEDGE_BOUND = 0.15                        # one-sided books this close to 0 or 1 still mark hedge legs
-MAX_SETTLE_WAIT = 14                      # days to wait for a valid index value if all 5 are missing
+MAX_SETTLE_WAIT = 14                      # Ari's 11/12 fallback: days to wait if all 5 are missing
+SPEC_MIN_VALID = 3                        # spec section 5: at least 3 valid days
+SPEC_MAX_WINDOW = 10                      # spec section 5: extend back to at most 10 calendar days in total
+SPEC_DEFER_BDAYS = 10                     # spec section 5: defer up to 10 business days, then backstop
+RULE, CALENDAR, FALLBACK = "final", "spec", "spec"   # decision 007; low-level defaults stay 11/12 (see run)
 CAPITAL_RATE = 0.04                       # illustrative opportunity cost for the dollar-day conversion
 RESULTS = build.RESULTS
 
 
 # ---------------------------------------------------------------- calendar
-def expiries(start: dt.date, end: dt.date) -> list[dt.date]:
-    """Last Friday of each month; moved to the prior Friday while within one business day of a decision."""
-    fomc = set(legs.fomc_dates())
+def _spec_blocked(e: dt.date, fomc) -> bool:
+    """Spec section 4: a decision inside the settlement window or on the first business day after expiry."""
+    w0 = e - dt.timedelta(days=SETTLE_DAYS - 1)
+    return any(w0 <= f <= e or (f > e and np.busday_count(e, f) <= 1) for f in fomc)
+
+
+def expiries(start: dt.date, end: dt.date, calendar: str = "m1") -> list[dt.date]:
+    """Monthly expiries: the last Friday of each month, moved back one week at a time while
+    calendar="spec"  (docs/spec.md section 4, decision 007) a decision is in the settlement window or on the
+                     first business day after expiry; same as src/settlement_check.py::expiries_no_decision;
+    calendar="m1"    (Milestone 1 draft, the 11/12 backtest) a decision is within one business day of expiry.
+    The default stays "m1" so read-only importers of this module keep their 11/12 meaning; run() uses "spec"."""
+    fomc = legs.fomc_dates()
     out = []
     for mo in pd.date_range(start.replace(day=1), end, freq="MS"):
         last = (mo + pd.offsets.MonthEnd(0)).date()
         e = last - dt.timedelta(days=(last.weekday() - 4) % 7)
-        while any(abs(np.busday_count(min(e, f), max(e, f))) <= 1 for f in fomc
-                  if abs((f - e).days) <= 7):
-            e -= dt.timedelta(days=7)
+        if calendar == "spec":
+            while _spec_blocked(e, fomc):
+                e -= dt.timedelta(days=7)
+        elif calendar == "m1":
+            while any(abs(np.busday_count(min(e, f), max(e, f))) <= 1 for f in fomc
+                      if abs((f - e).days) <= 7):
+                e -= dt.timedelta(days=7)
+        else:
+            raise ValueError(calendar)
         if start <= e <= end:
             out.append(e)
     return out
@@ -75,6 +102,56 @@ def expiries(start: dt.date, end: dt.date) -> list[dt.date]:
 
 def window(expiry: dt.date) -> list[dt.date]:
     return [expiry - dt.timedelta(days=k) for k in range(SETTLE_DAYS - 1, -1, -1)]
+
+
+def settle_spec(imap: dict, expiry: dt.date, data_end: dt.date | None = None) -> dict:
+    """Settlement procedure of docs/spec.md section 5 (decision 007), on daily index values in `imap`.
+
+    1. At least 3 of the 5 window days valid: S = 100 x mean of the valid days ("full" or "mean_of_valid").
+    2. Else extend the window back one calendar day at a time, to at most 10 days in total, until 3 valid
+       values are found; S = their mean ("extended"). Never before the last decision on or before expiry:
+       the decision day itself counts, because its index is the close after the announcement and so already
+       uses the new target range.
+    3. Else defer: the first of the next 10 business days with a valid value settles alone ("deferred").
+    4. Else the last valid value on or before expiry ("backstop").
+    Returns S, the days used, the method, and `decided`: the day the settlement value is known."""
+    data_end = data_end or legs.data_end()
+    ok = lambda d: np.isfinite(imap.get(d, np.nan))  # noqa: E731
+    W = window(expiry)
+    valid = [d for d in W if ok(d)]
+    if len(valid) >= SPEC_MIN_VALID:
+        method = "full" if len(valid) == SETTLE_DAYS else "mean_of_valid"
+        return {"S": 100.0 * np.mean([imap[d] for d in valid]), "days": valid, "method": method,
+                "decided": expiry, "window_valid": len(valid)}
+    floor = max((f for f in legs.fomc_dates() if f <= expiry), default=dt.date.min)
+    used = list(valid)
+    for j in range(SETTLE_DAYS, SPEC_MAX_WINDOW):
+        d = expiry - dt.timedelta(days=j)
+        if d < floor:
+            break
+        if ok(d):
+            used.append(d)
+            if len(used) >= SPEC_MIN_VALID:
+                break
+    if len(used) >= SPEC_MIN_VALID:
+        used = sorted(used)
+        return {"S": 100.0 * np.mean([imap[d] for d in used]), "days": used, "method": "extended",
+                "decided": expiry, "window_valid": len(valid)}
+    bdays = [x.date() for x in pd.bdate_range(expiry + dt.timedelta(days=1), periods=SPEC_DEFER_BDAYS)]
+    for d in bdays:
+        if d > data_end:
+            return {"status": "settlement_beyond_data"}
+        if ok(d):
+            return {"S": 100.0 * imap[d], "days": [d], "method": "deferred", "decided": d,
+                    "window_valid": len(valid)}
+    if bdays[-1] > data_end:
+        return {"status": "settlement_beyond_data"}
+    back = [d for d in imap if d <= expiry and ok(d)]
+    if not back:
+        return {"status": "no_settlement"}
+    d = max(back)
+    return {"S": 100.0 * imap[d], "days": [d], "method": "backstop", "decided": bdays[-1],
+            "window_valid": len(valid)}
 
 
 def strike(side: str, u: float) -> float:
@@ -135,20 +212,36 @@ def exec_price(side: str, action: str, rec) -> float:
 
 
 # ---------------------------------------------------------------- one trade
-def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt.date, entry: dt.date) -> dict:
+def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt.date, entry: dt.date,
+                fallback: str = "ari1112") -> dict:
+    """One futures trade and its static hedge. fallback="spec" uses settle_spec (decision 007);
+    fallback="ari1112" is the 11/12 rule (mean of valid days; if none, wait up to 14 days), the default so
+    that read-only importers keep their 11/12 meaning; run() passes "spec"."""
     W = window(expiry)
     if entry >= W[0]:
         return {"status": "entry_in_window"}
     I = {d: imap.get(d, np.nan) for d in W}
     valid = [d for d in W if np.isfinite(I[d])]
-    if not valid:
-        # spec: if all five days are missing, settlement waits for the next valid index value
-        nxt = next((expiry + dt.timedelta(days=j) for j in range(1, MAX_SETTLE_WAIT + 1)
-                    if np.isfinite(imap.get(expiry + dt.timedelta(days=j), np.nan))), None)
-        if nxt is None:
-            return {"status": "no_settlement"}
-        valid, I[nxt] = [nxt], imap[nxt]
-    S = 100.0 * np.mean([I[d] for d in valid])
+    if fallback == "ari1112":
+        if not valid:
+            # 11/12: if all five days are missing, settlement waits for the next valid index value
+            nxt = next((expiry + dt.timedelta(days=j) for j in range(1, MAX_SETTLE_WAIT + 1)
+                        if np.isfinite(imap.get(expiry + dt.timedelta(days=j), np.nan))), None)
+            if nxt is None:
+                return {"status": "no_settlement"}
+            valid, I[nxt] = [nxt], imap[nxt]
+        S = 100.0 * np.mean([I[d] for d in valid])
+        method = "full" if len(valid) == SETTLE_DAYS and valid[-1] <= expiry else (
+            "deferred" if valid[-1] > expiry else "mean_of_valid")
+        settle_days, last = valid, W[-1]
+    elif fallback == "spec":
+        st = settle_spec(imap, expiry)
+        if "S" not in st:
+            return st
+        S, method, settle_days = st["S"], st["method"], st["days"]
+        last = max(W[-1], st["decided"])
+    else:
+        raise ValueError(fallback)
 
     u_t = build.ub_at(entry)
     k = strike(side, u_t)
@@ -156,7 +249,12 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
     tranches = []
     for d in W:
         m1, m2, w = build.bracket(d, horizon)
-        sale = d if d in valid else next((x for x in valid if x > d), valid[-1])
+        if fallback == "ari1112":
+            sale = d if d in valid else next((x for x in valid if x > d), valid[-1])
+        else:
+            # causal: sell on d if its index is valid, else on the next valid window day, else on the day the
+            # settlement value is known (expiry, or the deferred / backstop day)
+            sale = d if d in valid else next((x for x in valid if x > d), st["decided"])
         if w > 0:
             tranches.append((m1, "near", d, sale, 100.0 / SETTLE_DAYS * w))
         if w < 1:
@@ -204,7 +302,6 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
         hedge_paid += q * pb + f_in
         cap_hedge_days += (q * pb + f_in) * (sale - entry).days
 
-    last = W[-1]
     meets = [m for m in legs.fomc_dates() if entry < m <= last]
     moves = [m for m in meets if build.ub_at(m) != build.ub_at(m - dt.timedelta(days=1))]
     hold = (expiry - entry).days
@@ -215,8 +312,10 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
         "contracts": "/".join(legs.meeting_ids()[m] for m in contracts), "n_contracts": len(contracts),
         "n_meetings_before_expiry": len(meets), "rate_moves": "/".join(str(m) for m in moves),
         "case": "rate_move" if moves else ("meeting_hold" if meets else "no_meeting"),
-        "settle_days_valid": len(valid), "fallback": len(valid) < SETTLE_DAYS,
-        "settle_waited": valid[-1] > expiry,
+        "settle_days_valid": len(valid) if fallback == "ari1112" else st["window_valid"],
+        "fallback": len(valid) < SETTLE_DAYS,
+        "settle_waited": max(settle_days) > expiry, "settle_method": method,
+        "settle_days_used": len(settle_days), "settle_first_day": min(settle_days),
         "decision_in_window": any(W[0] <= m <= W[-1] for m in legs.fomc_dates()), "legs_marked_from_book": n_book_mid,
         "index_entry": 100 * i_t if np.isfinite(i_t) else np.nan, "F0": F0,
         "basis": F0 - 100 * i_t if np.isfinite(i_t) else np.nan,
@@ -241,7 +340,10 @@ def hedge_trade(book: legs.Book, imap: dict, horizon: int, side: str, expiry: dt
     return out
 
 
-def run(rule="src", horizons=HORIZONS, sides=SIDES, leads=LEADS, start=build.SAMPLE_START, end=None):
+def run(rule=RULE, horizons=HORIZONS, sides=SIDES, leads=LEADS, start=build.SAMPLE_START, end=None,
+        calendar=CALENDAR, fallback=FALLBACK):
+    """All trades for one configuration. Defaults are decision 007 (rule final, spec calendar, spec
+    fallback). run("src", calendar="m1", fallback="ari1112") is the 11/12 configuration."""
     end = end or legs.data_end()
     book = legs.book(rule)
     rows, skipped = [], []
@@ -250,14 +352,14 @@ def run(rule="src", horizons=HORIZONS, sides=SIDES, leads=LEADS, start=build.SAM
         for side in sides:
             col = f"{side.upper()}{h}"
             imap = dict(zip(ix["date"], ix[col]))
-            for E in expiries(start, end):
+            for E in expiries(start, end, calendar):
                 for L in leads:
                     t = E - dt.timedelta(days=L)
                     while t.weekday() >= 5:
                         t -= dt.timedelta(days=1)
                     if t < start:
                         continue
-                    r = hedge_trade(book, imap, h, side, E, t)
+                    r = hedge_trade(book, imap, h, side, E, t, fallback)
                     if r["status"] == "ok":
                         rows.append({**r, "lead": L})     # nominal lead; hold_days is the actual one
                     else:
@@ -372,25 +474,54 @@ def coverage(tr, sk):
     return a.drop(columns=["horizon", "side"])
 
 
-def robustness(main_tr):
-    """Headline numbers under the Milestone 1 price rule and the longer 2022-03-17 sample."""
+ROBUSTNESS = [   # (label, run kwargs); decision 007 rows plus the 11/12 reproduction row
+    ("Main: decision 007 (final rule, spec calendar, spec fallback, from 2023-02-02)", None),
+    ("Only trades where every hedge leg had a rule price", "rule_priced_only"),
+    ("Milestone 1 price rule", dict(rule="m1")),
+    ("src rule with the trade branch (pre-006)", dict(rule="src")),
+    ("Milestone 1 expiry rule", dict(calendar="m1")),
+    ("Ari's 11/12 fallback", dict(fallback="ari1112")),
+    ("Sample from 2022-03-17", dict(start=build.EXT_START)),
+    ("11/12 configuration (src rule, Milestone 1 calendar, 11/12 fallback): reproduces the 11/12 tables",
+     dict(rule="src", calendar="m1", fallback="ari1112")),
+]
+
+
+def settlement_methods(tr):
     rows = []
-    variants = [("src rule, from 2023-02-02 (main)", main_tr),
-                ("main, trades with no book-marked leg", main_tr[main_tr["legs_marked_from_book"] == 0])]
-    variants.append(("Milestone 1 rule, from 2023-02-02", run("m1")[0]))
-    variants.append(("src rule, from 2022-03-17", run("src", start=build.EXT_START)[0]))
-    for lab, tr in variants:
+    for (h, s), g in tr.groupby(["horizon", "side"]):
+        x = g.drop_duplicates("expiry")
+        rows.append({"index": _name(h, s), "expiries": len(x),
+                     **{m: int((x["settle_method"] == m).sum())
+                        for m in ("full", "mean_of_valid", "extended", "deferred", "backstop")}})
+    return pd.DataFrame(rows)
+
+
+def robustness(main_tr, main_sk):
+    """Headline numbers under each robustness configuration of decision 007."""
+    rows = []
+    for lab, kw in ROBUSTNESS:
+        if kw is None:
+            tr, sk = main_tr, main_sk
+        elif kw == "rule_priced_only":
+            tr, sk = main_tr[main_tr["legs_marked_from_book"] == 0], pd.DataFrame()
+        else:
+            tr, sk = run(**kw)
         for (h, s), g in tr.groupby(["horizon", "side"]):
             ex = g[g["executable"]]
             nm = g[g["case"] != "rate_move"]
             mv = g[g["case"] == "rate_move"]
-            rows.append({"variant": lab, "index": _name(h, s), "trades": len(g),
+            nsk = int(((sk["horizon"] == h) & (sk["side"] == s)).sum()) if len(sk) else 0
+            rows.append({"variant": lab, "index": _name(h, s), "expiries": g["expiry"].nunique(), "trades": len(g),
+                         "skipped": nsk,
                          "max_abs_err_no_move": nm["err_mid"].abs().max() if len(nm) else np.nan,
                          "rate_move_trades": len(mv),
                          "rmse_err_rate_move": float(np.sqrt((mv["err_mid"] ** 2).mean())) if len(mv) else np.nan,
+                         "rmse_err_all": float(np.sqrt((g["err_mid"] ** 2).mean())),
                          "hedge_effectiveness": _acc(g)["hedge_effectiveness"],
                          "mean_cost": ex["cost_total"].mean(),
-                         "far_share_of_cost": ex["cost_far"].sum() / ex["cost_total"].sum()})
+                         "far_share_of_cost": ex["cost_far"].sum() / ex["cost_total"].sum(),
+                         "share_settle_not_full": (g["settle_method"] != "full").mean()})
     return pd.DataFrame(rows)
 
 
@@ -403,7 +534,8 @@ def report(tr, sk, rob):
             "futures_fair_value": fair_value(tr), "futures_accuracy_by_case": accuracy_by_case(tr),
             "futures_accuracy_by_lead": accuracy_by_lead(tr), "futures_rate_move_events": move_events(tr),
             "futures_costs": costs(tr), "futures_costs_pooled": costs_pooled(tr),
-            "futures_capital": capital(tr), "futures_robustness": rob}
+            "futures_capital": capital(tr), "futures_settlement_methods": settlement_methods(tr),
+            "futures_robustness": rob}
     RESULTS.mkdir(parents=True, exist_ok=True)
     build.PROCESSED.mkdir(exist_ok=True)
     for k, v in tabs.items():   # trade-level files are large and rebuildable: processed/ (gitignored)
@@ -413,11 +545,14 @@ def report(tr, sk, rob):
     lines = [
         "# CUT/HIKE futures vs. the static hedge: backtest tables", "",
         f"Generated by `index/futures.py` on {dt.date.today()}. Data: committed Kalshi pull in `index_m1/` "
-        f"(through {legs.data_end()}). Price rule: `src` (decision 002). Sample: {n_exp} monthly expiries, "
+        f"(through {legs.data_end()}). Configuration: decision 007 (price rule `{RULE}`, expiry calendar and "
+        f"settlement fallback of `docs/spec.md` sections 4 and 5). Sample: {n_exp} monthly expiries, "
         f"entries from {build.SAMPLE_START}, leads {', '.join(map(str, LEADS))} calendar days. "
         "Units: dollars per $100 contract (= index points). Trades with leads above about 30 days overlap "
         "across expiries, so they are not independent.", "",
         "## Coverage (trades run / skipped by reason)", "", _md(tabs["futures_coverage"], ".0f"), "",
+        "## Settlement procedure used (docs/spec.md section 5), expiries with at least one trade", "",
+        _md(tabs["futures_settlement_methods"], ".0f"), "",
         "## Fair value and basis (F0 - 100 x index at entry)", "", _md(tabs["futures_fair_value"]), "",
         "## Hedge error at index prices, by what happens before expiry", "",
         "err = hedge proceeds - settlement. Positive: the dealer (short future, long hedge) gains. "
@@ -437,8 +572,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-robustness", action="store_true")
     a = ap.parse_args(argv)
-    tr, sk = run("src")
-    rob = pd.DataFrame() if a.no_robustness else robustness(tr)
+    tr, sk = run()
+    rob = pd.DataFrame() if a.no_robustness else robustness(tr, sk)
     tabs = report(tr, sk, rob)
     print(tabs["futures_accuracy_by_case"].round(3).to_string(index=False))
     print(tabs["futures_costs_pooled"].round(3).to_string(index=False))

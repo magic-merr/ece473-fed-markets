@@ -21,3 +21,36 @@ Open issues:
 - Decision 002 is still proposed; results use it. Rerun `python futures.py` if it changes.
 - TASKS 13 to 16 added for Jay and Palmer.
 Next: TASK 7 (return decomposition on the src-rule index), then my report section.
+
+## 2026-11-15 16:51  main
+Did:
+- A1: read decision 007 and signed it (`5bc03a1`, pushed alone). Wrote notes F1 to F5 (spec wording and reporting,
+  none changes the configuration) as Requests R1 to R5 (`734ca07`).
+- A2: `index/legs.py` rule `final` = `src` plus the wide-book mid, identical to `src/settlement_check.py::wide_mid_days`
+  (same rows, sources and values, checked at zero tolerance). Default in `build.py` and `futures.py`.
+- A3: `index/futures.py` spec section 4 calendar (identical to `expiries_no_decision`; moves 5 of the old 44
+  expiries back one week and adds 2026-10-23) and spec section 5 settlement (3 of 5, extension to 10 days not before
+  the last decision, deferral up to 10 business days, backstop). Hedge shares on days without a valid index value
+  are sold on the next valid window day, else on the day settlement is known (causal). Low-level defaults of
+  `expiries()` and `hedge_trade()` stay at the 11/12 behaviour so Palmer's read-only imports keep their meaning;
+  `run()` and `main()` use the 007 configuration. Robustness rows per 007 plus the 11/12 configuration, which
+  reproduces all 1,152 trades and every committed 11/12 table exactly (`tests/ref_1112/`). 20 index tests.
+- A4: reran `build.py`, `futures.py`, `figures.py`; new `fig_index_series.png`; rewrote `index/README.md`.
+Results (numbers worth keeping, pre-freeze; $ per $100 contract):
+- Sample: 45 monthly expiries 2023-02-24 to 2026-10-23, 7 leads, 1,188 trades. No decision in any settlement window.
+- Hedge error exactly 0 with a full window and no rate change, including meetings where the Fed holds. Fallback
+  windows without a rate change: at most $3.11 (HIKE60). Rate move RMSE: CUT90 26.1, CUT60 36.4, HIKE90 14.9,
+  HIKE60 19.5; worst $74.3. Hedge effectiveness, all trades: CUT90 0.66, CUT60 0.53, HIKE90 0.73, HIKE60 0.52.
+- Round-trip hedge cost: CUT90 $7.76, CUT60 $5.71, HIKE90 $7.93, HIKE60 $6.10. Far leg 52 to 66% of cost with 49 to
+  53% of the contracts; 1.3 to 2.1 times the near leg per contract.
+- Dealer capital $102.74 to $107.22 per contract; $0.07 (7-day lead) to $1.06 (90-day) at 4% a year.
+- Basis F0 minus spot CUT90: $1.61 (7 days), $8.20 (30), $17.28 (90). HIKE90 about 0.
+- Settlement: 143 of 178 expiry settlements full window, 17 three or four days, 9 extended, 9 deferred, 0 backstop.
+- Final index vs Milestone 1 from 2023-02-02: CUT90 correlation 0.995, MAE 0.59pp, coverage 87.5% vs 96.0%;
+  45 of 1,708 days differ by more than 5pp (max 39pp), all on wide-book-mid or trade legs.
+- Robustness, CUT90 rate-move RMSE: 26.1 main, 19.5 rule-priced legs only, 26.3 Milestone 1 rule, 26.2 src rule,
+  23.4 Milestone 1 calendar, 26.1 11/12 fallback, 21.2 from 2022-03-17, 23.5 in the 11/12 configuration.
+Open issues:
+- Requests R1 to R4 (Jay, spec wording) and R5 (Palmer, numbers.md: 45 expiries) are open.
+Next: A5 (hedge error by direction of the move), A6 (event study), by 10:30pm. A7 on Monday.
+

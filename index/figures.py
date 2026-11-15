@@ -2,6 +2,8 @@
 
   fig_hedge_error.png   hedge error at index prices vs entry lead, by what happens before expiry
   fig_hedge_cost.png    round-trip trading cost of the hedge, near vs far contract, by index
+  fig_index_series.png  CUT90 and HIKE90 on the decision 007 rule (processed/index_daily.csv), with the
+                        decision days on which the Fed changed the rate
 Run: cd index && python figures.py
 """
 from __future__ import annotations
@@ -90,10 +92,40 @@ def hedge_cost(tr: pd.DataFrame):
     plt.close(fig)
 
 
+def index_series():
+    import build
+    import legs
+    ix = pd.read_csv(PROCESSED / "index_daily.csv", parse_dates=["date"])
+    ix = ix[ix["date"] >= pd.Timestamp(build.SAMPLE_START)]
+    fig, ax = plt.subplots(figsize=(10, 3.8), facecolor=SURF)
+    moves = [(m, build.ub_at(m) - build.ub_at(m - pd.Timedelta(days=1).to_pytimedelta()))
+             for m in legs.fomc_dates() if pd.Timestamp(m) >= ix["date"].min() and m <= legs.data_end()]
+    first = {"cut": True, "hike": True}
+    for m, chg in moves:
+        if chg == 0:
+            continue
+        kind = "cut" if chg < 0 else "hike"
+        ax.axvline(pd.Timestamp(m), color=INK2, linewidth=0.8, linestyle="--" if kind == "cut" else ":",
+                   label=f"Fed {kind} (decision day)" if first[kind] else None, zorder=1)
+        first[kind] = False
+    ax.plot(ix["date"], 100 * ix["CUT90"], color=NEAR, linewidth=1.6, label="CUT90", zorder=3)
+    ax.plot(ix["date"], 100 * ix["HIKE90"], color=FAR, linewidth=1.6, label="HIKE90", zorder=3)
+    ax.set_ylim(0, 100)
+    ax.set_ylabel("Probability (%)", color=INK2, fontsize=9)
+    _style(ax)
+    ax.legend(frameon=False, fontsize=8.5, loc="lower left", bbox_to_anchor=(0, 1.0), ncol=4, labelcolor=INK)
+    ax.set_title("CUT90 and HIKE90 on the final price rule (gaps: days without a valid value)", color=INK,
+                 fontsize=11, loc="left", pad=24)
+    fig.tight_layout()
+    fig.savefig(RESULTS / "fig_index_series.png", dpi=200, facecolor=SURF)
+    plt.close(fig)
+
+
 def main():
     tr = pd.read_csv(PROCESSED / "futures_trades.csv")
     hedge_error(tr)
     hedge_cost(tr)
+    index_series()
 
 
 if __name__ == "__main__":
