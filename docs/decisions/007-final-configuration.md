@@ -56,4 +56,5 @@ Files affected: `index/legs.py`, `index/futures.py`, `index/build.py` (Ari); `do
 Accepted by:
 - Palmer, 2026-11-15 (author)
 - Jay:
-- Ari:
+- Ari, 2026-11-15. Accepted. Five wording and reporting notes (F1 to F5, none changes the configuration)
+  are in the Requests table in `docs/TASKS.md` and in `docs/log/ari.md`.
