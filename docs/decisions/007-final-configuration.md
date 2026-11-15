@@ -55,6 +55,16 @@ Files affected: `index/legs.py`, `index/futures.py`, `index/build.py` (Ari); `do
 
 Accepted by:
 - Palmer, 2026-11-15 (author)
-- Jay:
+- Jay, 2026-11-15. Accepted as written. Two notes, neither of which changes the table:
+  (a) The settlement-window row points at `docs/spec.md` section 5, and that section currently *asserts* the
+      extension can never reach past a decision date. That assertion is false: 11 of the 44 expiries have a
+      decision exactly 9 days before expiry (March and September every year, plus 2024-12 and 2025-06), which a
+      10-day extension would span. The rule in this table and in A3 already says "not past a decision date", so
+      the rule is right and only the spec's wording is wrong. J2 restates it as an explicit stop condition and
+      says what happens when it binds: the window cannot reach 3 valid days, so settlement defers. Ari needs a
+      test for that branch, which A3 already asks for. See Request R1.
+  (b) I accept that the expiry rule is justified by definition and not by hedge error. My `docs/spec.md`
+      section 10 predicted the rate-move RMSE would fall; 006 measured it rising for CUT90 (23.5 to 26.2). J2
+      removes that prediction. The prediction was wrong, the rule is not.
 - Ari, 2026-11-15. Accepted. Five wording and reporting notes (F1 to F5, none changes the configuration)
   are in the Requests table in `docs/TASKS.md` and in `docs/log/ari.md`.
