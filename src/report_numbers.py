@@ -118,11 +118,18 @@ def sample_and_index():
             f"{ix} trades run (skipped: {int(r['no_entry_price'])} no entry price, {int(r['no_exit_price'])} no exit "
             "price)", f"{IR}/futures_coverage.csv")
     nb = md_table("theory/results/noarb_summary.md", r"^## 4\. Expiry calendar", 0)
+    add(s, "expiries_moved_2022_sep2026", "6 of 55", "expiries moved by the spec section 4 rule, Mar 2022 to Sep 2026 "
+        "(stated in the spec table from `theory/noarb.py`; recomputed by Palmer 11/15 from `index/futures.py` "
+        "calendars: 6 of 55)", "docs/spec.md")
+    add(s, "expiries_moved_2022_dec2026", "7 of 58", "same, Mar 2022 to Dec 2026 (recomputed by Palmer 11/15: 7 of 58)",
+        "theory/README.md")
     add(s, "expiries_moved_old_calendar", "5 of 44", "Feb 2023 to Sep 2026 expiries that the spec section 4 rule "
         "moves back one week (each had an FOMC decision inside the 5-day window); the final calendar also adds "
         "2026-10-23 (moved from 2026-10-30), giving 45", "theory/results/noarb_summary.md")
     sm = csv("futures_settlement_methods")
     tot = int(sm["expiries"].sum())
+    add(s, "settle_not_full", f"{tot - int(sm['full'].sum())} of {tot}", "expiry settlements with fewer than 5 valid "
+        "window days, all four indices", f"{IR}/futures_settlement_methods.csv")
     add(s, "settle_full", f"{int(sm['full'].sum())} of {tot}", "expiry settlements (45 or 44 per index x 4) with all "
         "5 window days valid", f"{IR}/futures_settlement_methods.csv")
     add(s, "settle_mean_of_valid", f"{int(sm['mean_of_valid'].sum())} of {tot}", "settlements on the mean of 3 or 4 "
@@ -475,6 +482,7 @@ def theory():
     add(s, "ladder_days", n, "Kalshi meeting-days checked, from March 2022", p)
     add(s, "ladder_violations_tradable", f"{ex['Violations'].split(' of ')[0]} ({ex['Share']}%)", "meeting-days "
         "with an executable violation (bid at a higher strike above an ask at a lower strike)", p)
+    add(s, "ladder_violations_mid_count", mid["Violations"], "meeting-days with non-monotone mid prices, count", p)
     add(s, "ladder_violations_mid", f"{mid['Share']}%", "meeting-days with non-monotone mid prices", p)
     txt = (ROOT / p).read_text()
     add(s, "ladder_worst_credit", re.search(r"Largest executable credit: (\$\d+\.\d+)", txt).group(1),

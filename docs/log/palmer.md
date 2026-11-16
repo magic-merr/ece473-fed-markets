@@ -144,3 +144,22 @@ Did:
 Results (numbers worth keeping): none new; all in `numbers.md`.
 Open issues: tag push (Palmer, from his Mac).
 Next: Monday. P7 sections 3, 8, 9 by 1pm, P8 assemble, edit, check every number against `numbers.md`, submit by 9pm.
+
+## 2026-11-15 20:10  main
+Did:
+- Content wrap-up after Ari's audit (`e1c2e49`, additive) and Jay's R8 to R14 (`1bd5262`).
+- Reran all four `src/` scripts at `e1c2e49`: every table reproduces; only the decomposition header and a reworded
+  coverage note changed (the chain starts on the last index day before the sample start, which is why the
+  chained CUT90 change is 3.43 and the change from the sample start is 3.41, as Ari noted).
+- R15 closed: 15 worked-example keys (`ex_*`) from `index/results/worked_examples.csv`.
+- R16 closed: outline rows 2, 6, 7, 8 updated (45 expiries, `fig_index_series.png`, worked examples, decomposition
+  and event study sources, pre-decision index gaps and the ZQ limit in section 8); Milestone I promises ticked.
+- Number scan of sections 1, 4, 5, `docs/theory.md` and `docs/spec.md` against `numbers.md`: every figure is in it
+  except four that were correct but had no line. Added `settle_not_full` (35 of 178), `ladder_violations_mid_count`
+  (2,846 of 11,179), and `expiries_moved_2022_sep2026` / `_dec2026` (6 of 55, 7 of 58, recomputed from the
+  `index/futures.py` calendars). `numbers.md` now has 191 numbers.
+- P9 marked skipped. R7 left open for Monday as a cross-reference in section 7.
+- P6: tag `results-final` goes on the commit that adds this entry. This session cannot push tags; Palmer does.
+Results (numbers worth keeping): none new.
+Open issues: tag push (Palmer). R7 (Ari, Monday writing).
+Next: Monday. P7 sections 3, 8, 9; P8 assemble and edit; presentation Tuesday.
