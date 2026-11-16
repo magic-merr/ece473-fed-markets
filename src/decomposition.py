@@ -242,8 +242,9 @@ def main(argv=None):
         "## 1. Index change split into four parts", "", md(comp[head]), "",
         "## 2. Coverage", "",
         "dropped: intervals with an index value on both ends where a held leg had no price, left out of the sums. "
-        "index_change_incl_dropped: the summed index change including them, which for chained rows equals the "
-        "change from the first to the last day with an index value.", "", md(comp[cover]), "",
+        "index_change_incl_dropped: the summed index change including them. For chained rows it equals the "
+        "change from the last day with an index value before the sample start to the last day with one, so it "
+        "can differ slightly from the change measured from the sample start itself.", "", md(comp[cover]), "",
         "## 3. By interval type, main configuration", "", md(by_type(frames[main_label])), "",
         "## 4. By interval type, Milestone 1 report method (the 11/12 log table)", "",
         md(by_type(frames[m1_label])), "",

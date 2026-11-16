@@ -158,6 +158,52 @@ def sample_and_index():
             "results/settlement_rule_check.md")
 
 
+def worked_examples():
+    s = "Worked examples (sections 2 and 7; Ari's `index/examples.py`)"
+    src = f"{IR}/worked_examples.csv"
+    w = pd.read_csv(ROOT / src).set_index(["example", "key"])["value"]
+
+    def g(ex, key):
+        return w[(ex, key)]
+
+    def f(ex, key):
+        return float(g(ex, key))
+
+    e = "index_2024-01-11"
+    add(s, "ex_index_date", g(e, "date"), "worked index example: date, upper bound "
+        f"{f(e, 'upper_bound_pct'):.2f}%, target date T = {g(e, 'target_date_T')}", src)
+    add(s, "ex_index_meetings", f"{g(e, 'm1_meeting')} and {g(e, 'm2_meeting')}, w = {f(e, 'w'):.2f}",
+        "the two meetings around T and the near-meeting weight w", src)
+    add(s, "ex_index_cut_legs", f"YES {f(e, 'CUT90_leg1_yes_price'):.3f} and {f(e, 'CUT90_leg2_yes_price'):.3f} "
+        f"(cut probabilities {f(e, 'CUT90_leg1_probability'):.3f} and {f(e, 'CUT90_leg2_probability'):.3f})",
+        f"CUT90 legs: mid of \"upper bound above {f(e, 'CUT90_leg1_strike_above'):.2f}%\" at each meeting, and one "
+        "minus it", src)
+    add(s, "ex_index_cut90", f"{f(e, 'CUT90_points'):.1f}", "CUT90 on that day, index points", src)
+    add(s, "ex_index_hike90", f"{f(e, 'HIKE90_points'):.1f}", "HIKE90 on that day, index points", src)
+    e = "reset_2024-12-18"
+    add(s, "ex_reset_move", f"{f(e, 'cut90_day_before_points'):.2f} to {f(e, 'cut90_decision_day_points'):.2f} "
+        f"({f(e, 'change_points'):+.2f})", "CUT90 the day before and on the 2024-12-18 cut (upper bound "
+        f"{f(e, 'upper_bound_before_pct'):.2f}% to {f(e, 'upper_bound_after_pct'):.2f}%)", src)
+    add(s, "ex_reset_old_strike", f"{f(e, 'cut90_decision_day_at_old_strike_points'):.2f}", "CUT90 on the decision "
+        "day had the strike stayed at the old level", src)
+    add(s, "ex_reset_split", f"reset {f(e, 'reset_points'):+.2f}, news {f(e, 'belief_change_points'):+.2f}",
+        "the decision-day change split into the strike reset and the change in beliefs", src)
+    e = "trade_cut90_2024-12-27"
+    add(s, "ex_trade_dates", f"entry {g(e, 'entry')}, expiry {g(e, 'expiry')}", "worked CUT90 trade, hedged with "
+        f"{g(e, 'contracts')}; the Fed cut on {g(e, 'rate_moves')}", src)
+    add(s, "ex_trade_F0", usd(f(e, "F0")), f"futures price at entry (index {f(e, 'index_entry'):.2f}, basis "
+        f"{usd(f(e, 'basis'))})", src)
+    add(s, "ex_trade_S", usd(f(e, "S")), f"settlement value ({g(e, 'settle_method')} 5-day window, before rounding "
+        f"{f(e, 'S_unrounded'):.2f})", src)
+    add(s, "ex_trade_hedge", usd(f(e, "hedge_proceeds")), f"hedge proceeds at expiry (hedge P&L "
+        f"{sgn_usd(f(e, 'hedge_pnl_mid'))}; buyer P&L {sgn_usd(f(e, 'futures_pnl_long'))})", src)
+    add(s, "ex_trade_error", usd(f(e, "err_mid")), "dealer hedge error, hedge proceeds minus S (both in dollars per contract)", src)
+    add(s, "ex_trade_cost", usd(f(e, "cost_total")), f"round-trip hedge cost (spread {usd(f(e, 'cost_spread'))}, "
+        f"fees {usd(f(e, 'cost_fee'))})", src)
+    add(s, "ex_trade_capital", usd(f(e, "capital_dealer")), f"dealer capital (buyer posts {usd(f(e, 'capital_long'))})",
+        src)
+
+
 def event_study():
     s = "FOMC decision-day event study (section 7, A6)"
     es = csv("event_study_summary")
@@ -456,7 +502,7 @@ def theory_prose():
 
 
 def main():
-    for f in (sample_and_index, hedge, cost_capital_basis, robustness, event_study, palmer_results, decomposition,
+    for f in (sample_and_index, worked_examples, hedge, cost_capital_basis, robustness, event_study, palmer_results, decomposition,
               data_section, theory, theory_prose):
         f()
     keys = [e[0] for v in SECTIONS.values() for e in v]
