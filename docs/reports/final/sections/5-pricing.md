@@ -4,7 +4,8 @@ Owner: Jay. Full argument and proof: `docs/theory.md`. Numbers: `docs/reports/fi
 
 ## 5.1 Fair value from a static hedge
 
-Write `U_t` for the upper bound of the target range in effect on day `t`, and `C_m(t)` for the price of the
+Write `U_t` for the upper bound of the target range set by the most recent decision announced on or before
+day `t`, since the daily close falls after the 2:00pm announcement, and `C_m(t)` for the price of the
 cut leg at meeting `m`, which is one minus the price of meeting `m`'s contract "the upper bound after `m` is
 above `U_t` minus 0.25". The index on day `t` is `I(t) = w(t) C_a(t) + (1 - w(t)) C_b(t)`, where `a` and `b`
 are the meetings bracketing the day ninety days ahead and `w` is the interpolation weight (section 2). The
@@ -20,8 +21,10 @@ weights and strikes fixed on the trade date, and
 
 evaluated at trade-date prices. A dealer short the future buys, for each settlement day, `20 w(d)` contracts
 of the nearer meeting and `20 (1 - w(d))` of the later one, and sells each day's tranche at that day's close.
-That pays exactly `100 S`. Any other price allows a riskless profit. The proof is in `docs/theory.md`
-section 2.
+That pays `100` times the mean of the index over those five days, which is the contract's payout before `S`
+is rounded to the nearest 0.25. Any other price allows a riskless profit. Rounding and the missing-day
+fallback are the only reasons the replication is not exact to the cent: with a full window and no rate change
+the error is zero before rounding and at most $0.12 after. The proof is in `docs/theory.md` section 2.
 
 Two things follow.
 
@@ -72,10 +75,13 @@ does not: the predicted gain lands a little below the realized one. Applying it 
 from $8.63 to $4.92. For HIKE90 the gain term is
 too large, $37.24 against $20.01, and its
 correlation with the realized gain across trades is near zero. The reason is that the ratio of two hikes to
-one hike is read off the entry-day ladder and assumed stable. After the 2023 hikes it was not: once the Fed
-hiked, the market priced further hikes more richly than the entry-day ratio implied, so the re-anchored index
-was worth more than the formula assumed and the dealer's real gain was smaller. We report `F_adj` as fair
-value for CUT and as an upper bound for HIKE.
+one hike is read off the entry-day ladder and assumed stable. It is not, and it misses in both directions.
+The aggregate overstatement comes from the May 2023 and September 2026 hikes, where the market priced a
+further hike far more richly once the move happened than the entry-day ratio implied, so the re-anchored
+index was worth more than the formula assumed and the dealer's real gain was smaller. At the March and July
+2023 hikes it understated the gain instead. The errors are large and of both signs, which is why the
+correlation is near zero rather than merely weak. We report `F_adj` as fair value for CUT and as an upper
+bound for HIKE.
 
 What is left after the correction is belief change rather than construction. In this sample cuts kept arriving
 later than priced, which is a fact about 2023 to 2026 and not a property of the contract.

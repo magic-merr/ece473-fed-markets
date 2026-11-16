@@ -42,7 +42,8 @@ the backtest.
 ## 4.3 Settlement and the fallback when days are missing
 
 The settlement window is the five calendar days ending on expiry, and `S` is the mean of the valid daily index
-values in it. A day is valid when both index legs have a price under the rule in 4.4.
+values in it. A day is valid when every index leg carrying positive weight has a price under the rule in 4.4,
+which on a day the index sits entirely on one meeting means that meeting alone.
 
 About one CUT90 settlement in five has fewer than five valid days, so the fallback is part of the contract
 rather than an edge case:
@@ -56,8 +57,9 @@ rather than an edge case:
 5. A backstop settles at the last valid value before expiry if nothing appears within ten business days. It
    does not fire in our sample.
 
-The stop in step 3 binds in practice. In 11 of the 44 expiries a decision falls exactly nine days before
-expiry, inside a ten-day extension: March and September of every year, plus December 2024 and June 2025.
+The stop in step 3 binds in practice. In 11 of the 45 expiries a decision falls exactly nine days before
+expiry, inside a ten-day extension: March and September of every year in the sample, plus December 2024,
+June 2025 and June 2026.
 
 ## 4.4 What price settles a leg
 
@@ -65,12 +67,15 @@ A leg takes the first of these that applies:
 
 1. The standing two-sided Kalshi book, priced at the mid when it is no wider than ten cents, or at the bound
    midpoint when one side is pinned.
-2. If the book is two-sided and quoted within three days but wider than ten cents, the mid of that book.
-3. The last trade, only when the book is not two-sided.
+2. If that book is wider than ten cents and a trade printed within the last three days, the mid of the
+   standing book, in place of that trade.
+3. The last trade, when the book is not two-sided or has not been quoted within three days.
 4. Any of the above carried forward, up to three days old.
+5. A tail fill: where nothing above gives a price and the contract last traded at or beyond the one-cent
+   tails, the last usable tail value.
 
-If none applies the day is not valid. There is no fifth branch, so the contract never settles on a price more
-than three days old.
+If none applies the day is not valid. Apart from the step 5 tail fill, the contract never settles on a price
+more than three days old.
 
 Step 2 is the one term we changed on evidence rather than on principle. Our first proposal was to refuse a
 wide book outright, on the ground that a last trade inside a book fifteen to thirty-five cents wide should not

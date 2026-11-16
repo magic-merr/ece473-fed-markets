@@ -140,3 +140,31 @@ Open issues:
   and he should file a Request rather than either of us editing the other's text.
 
 Next: Monday, read through sections 1, 4 and 5 in Palmer's assembled draft by 6pm. Nothing else outstanding.
+
+## 2026-11-15 19:10  main
+Did: closed Requests R8 to R14 from Ari's audit. Sixteen edits across `docs/spec.md`, `docs/theory.md` and
+sections 1, 4 and 5. Wording and reasoning only; no number changed and no result file was touched.
+- R8. The listing rule contradicted its own justification. Kept three monthly expiries, which is the range the
+  backtest covers to 90 days, and fixed the reasoning: past about six weeks a contract is near certain to span
+  a meeting, which is a reason to price it with `F_adj` rather than `F0`, not a reason to delist it.
+- R9. Ari is right and I checked it: the eleven are March and September of 2023 to 2026, plus December 2024,
+  June 2025 and **June 2026** (expiry 2026-06-26, decision 2026-06-17). My list named ten. Section 4.3 also
+  said 44 where the final calendar has 45.
+- R10. Section 4.4 still carried the pre-patch four-step rule. Now matches spec 5.1, tail fill included, and
+  the "no fifth branch" sentence is gone.
+- R11. Proposition 1 and section 5.1 now say the hedge pays 100 times the unrounded mean, with rounding to
+  0.25 leaving at most half a tick, and the RMSE line attributes the residual to fallback days and rounding
+  rather than fallback days alone.
+- R12. The HIKE explanation named the wrong episodes. It is May 2023 and September 2026 that drive the
+  overstatement, while March and July 2023 understated, so the formula misses in both directions. Reworded
+  without citing numbers that are not in `numbers.md`, and it now explains why the correlation is near zero
+  rather than merely weak.
+- R13. Section 1 called $7.76 the edge a market maker needs. It now gives $7.86 on no-move trades and $4.60
+  across all trades, and says the needed spread sits between them depending on how often the Fed moves.
+- R14. `U_t` is the range set by the most recent decision announced on or before day `t`, not the range in
+  effect; continuity now covers the bracket roll, where `w` jumps 0 to 1 but both sides put all weight on the
+  same meeting; "valid" now reads every leg with positive weight.
+
+Results (numbers worth keeping): none new. R9 recomputed independently and matches Ari exactly.
+Open issues: none. No request is open to me.
+Next: Monday, read sections 1, 4 and 5 in Palmer's assembled draft by 6pm.

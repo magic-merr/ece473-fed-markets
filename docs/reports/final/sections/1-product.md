@@ -24,9 +24,10 @@ proves this and states the one condition under which it stops being exact.
 Two people would use it. A buyer who wants ninety-day exposure to the pace of Fed cuts, such as a fund hedging
 a floating-rate liability, gets it in one position instead of a daily roll. A dealer who sells it hedges it
 statically in the meeting contracts and earns the difference between the futures price and the hedge cost.
-Section 7 reports what that difference has to be: in this sample the dealer's hedging cost is roughly
-$7.76 per contract round trip, which is the edge a market maker would need before
-any profit.
+Section 7 reports what that difference has to be. Round-trip hedging costs $7.76 per contract, and on trades
+where the Fed did not move at all the dealer needs $7.86. Across every trade the shortfall is smaller,
+$4.60, because the dealer's gains when the Fed does move pay back part of the cost. The spread a market
+maker needs therefore sits between those two figures depending on how often the Fed moves.
 
 The rest of the report is about that contract. Section 2 defines the index it settles on, section 3 the data
 and the price rule behind the index, section 4 the contract terms, section 5 the pricing argument, sections 6

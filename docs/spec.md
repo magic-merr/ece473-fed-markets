@@ -42,7 +42,9 @@ horizon and are reported as a comparison, not listed as products.
 ## 2. Underlying
 
 The settlement index is CUT90 as defined in decision 003 and implemented in `index/build.py`. In words:
-`U_t` is the upper bound of the target range in effect on day `t`. For meeting `m`, `C_m(t)` is the
+`U_t` is the upper bound of the target range set by the most recent decision announced on or before day
+`t`. The daily close is after the 2:00pm announcement, so a decision day already reads against its own new
+range, even though that range takes effect the next day. For meeting `m`, `C_m(t)` is the
 probability that the upper bound after `m` is below `U_t`, taken as one minus the YES price of meeting `m`'s
 "above `U_t` minus 0.25" contract. With `T = t + 90` days, `m1` is the last meeting on or before `T` and `m2`
 the first meeting after `T`, and `w = (date of m2 - T) / (date of m2 - date of m1)`. Then
@@ -112,8 +114,9 @@ against this rule.
 **Settlement value.** `S` is the mean of the valid daily index values in the window, rounded to the nearest
 0.25.
 
-**Valid.** A daily index value is valid when both legs, `C_m1` and `C_m2`, have a price under the hierarchy
-below. A day on which either leg has no price produces no index value and is not valid.
+**Valid.** A daily index value is valid when every leg carrying positive weight has a price under the
+hierarchy below. On a day when `w = 1` the whole index sits on `m1`, so only that leg is needed. A day on
+which a leg with positive weight has no price produces no index value and is not valid.
 
 ### 5.1 Source hierarchy for a leg's price
 
@@ -168,7 +171,7 @@ the four indices 35 of 178 expiry settlements do (`numbers.md`: `share_settle_no
 
 The decision-date stop in step 3 is a real constraint, not a formality. In 11 of the 45 expiries in the
 backtest sample a decision falls exactly nine days before expiry, inside a ten-day extension: March and
-September of every year, plus December 2024 and June 2025. In those months the extension can reach back only
+September of every year in the sample, plus December 2024, June 2025 and June 2026. In those months the extension can reach back only
 to the day after the decision, so it may stop short of three valid days and settlement defers under step 4.
 An earlier draft of this file asserted that the extension could never reach a decision date. That assertion
 was wrong. The rule in decision 007 and in TASK A3 already carried the guard; only this file's justification
@@ -233,9 +236,12 @@ Two consequences for the product:
 - Short-dated contracts are close to exactly hedgeable. The share of CUT90 trades with no meeting before expiry
   falls with the lead and reaches zero from 45 days on (`numbers.md`:
   `no_meeting_share_cut90_by_lead`).
-- A contract listed more than about six weeks before expiry carries rate-change risk the static hedge does not
-  cover, and the buyer pays for it in the basis. This is why section 3 lists only the three nearest monthly
-  expiries.
+- A contract listed more than about six weeks before expiry is near certain to span a meeting, so the static
+  hedge alone no longer prices it. That is not a reason to stop listing it. It is a reason to price it with
+  `F_adj` rather than `F0`, since the extra risk is the rate-change digital that `docs/theory.md` section 3
+  prices from the trade-date ladder. Section 3 lists three monthly expiries, reaching about 90 days, which is
+  the range the backtest covers. The buyer of a longer-dated contract pays for the digital in the basis, and
+  the dealer who sells it is the one carrying it.
 
 ## 9. Changes from the Milestone 1 draft
 
@@ -247,7 +253,7 @@ Two consequences for the product:
 | Leg price source | Not stated | Five-step hierarchy: a wide two-sided book priced at the mid, and a tail fill for near-certain contracts | Decisions 002, 005, 006, 007. Section 5.1 |
 | Composite venue price | Raised as an option | Not used in settlement | Decision 006 point 3. Section 5.1 |
 | Quotation increment | Not stated | 0.25 index points | The ladder prices in whole cents and the index is a weighted average of two of them |
-| Listed expiries | Not stated | The three nearest months | Beyond that the static hedge does not hold. Section 8 |
+| Listed expiries | Not stated | The three nearest months | The range the backtest covers. Past about six weeks the static hedge needs the `F_adj` correction, which is priced, not a reason to delist. Section 8 |
 | Settlement discount | Assumed estimable, after Gebele and Matthes | Bounded, not estimated | Not identifiable at these spreads. Section 7 |
 
 ## 10. Status of open items

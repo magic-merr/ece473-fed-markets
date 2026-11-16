@@ -11,7 +11,7 @@ Fixed once, used throughout.
 
 | Symbol | Meaning |
 |---|---|
-| `U_t` | Upper bound of the Fed's target range in effect on day `t`, in percent |
+| `U_t` | Upper bound of the target range set by the most recent decision announced on or before day `t`, in percent. The close is after the 2:00pm announcement, so a decision day reads against its own new range |
 | `Y_m(K, t)` | Price on day `t` of meeting `m`'s contract "the upper bound after `m` is above `K`" |
 | `C_m(t)` | `1 - Y_m(U_t - 0.25, t)`, the cut leg: the upper bound after `m` is below today's |
 | `H_m(t)` | `Y_m(U_t, t)`, the hike leg |
@@ -49,7 +49,9 @@ settlement value is therefore
 a combination of traded contract prices whose weights and strikes are fixed at `t`. The portfolio above holds
 exactly those positions and liquidates tranche `d` at day `d`'s close, receiving `20 w(d) C_a(d)(d) +
 20 (1 - w(d)) C_b(d)(d)`, which is `100` times day `d`'s contribution to `S`. Summing over the five days, the
-portfolio pays `100 S`, which is the contract's payout. The portfolio is bought once at `t` and needs no
+portfolio pays `100` times that mean, which is the contract's payout before `S` is rounded to the nearest
+0.25. Rounding leaves a residual bounded by half a tick of the index, which is $0.125 a contract. The
+portfolio is bought once at `t` and needs no
 rebalancing, so it is self-financing, and the contract is fully collateralized, so neither side defaults. A
 price other than the portfolio's cost at `t` would therefore permit a riskless profit. ∎
 
@@ -63,8 +65,9 @@ known at `t` and the hedge is still exact. This is the sharper form of the condi
 
 Ari's backtest confirms it. Trades with a meeting that held have the same near-zero hedge error as trades with
 no meeting at all: RMSE $0.20 against $0.22 per
-$100 contract, where the residual comes only from settlement days with no valid index value
-(`index/results/futures_backtest.md`).
+$100 contract. The residual comes from settlement days with no valid index value and from rounding `S` to
+0.25: with a full five-day window and no rate change the error is zero before rounding and at most $0.12
+after it (`numbers.md`: `max_err_full_window_no_move`).
 
 **Corollary 1.2. The future prices the roll-down that the spot index cannot deliver.** Between announcements
 `U` is fixed, and `T = t + 90` advances one day per day, so
@@ -139,10 +142,13 @@ cost the dealer a little, and it assumes the old legs go to exactly 1. Both push
   $4.92.
 - **For HIKE, `G` is too large**, $37.24 predicted against
   $20.01 realized, and the cross-trade correlation is near zero. The reason is
-  that `P_two / P_one` is read off the entry-day ladder, which assumes the ratio is stable. After the 2023
-  hikes it was not: once the Fed hiked, the market priced further hikes more richly than the entry-day ratio
-  implied, so the re-anchored index was worth more than `P_two / P_one` predicted and the dealer's true gain
-  was smaller. Report `F_adj` as fair value for CUT and as an upper bound for HIKE.
+  that `P_two / P_one` is read off the entry-day ladder, which assumes the ratio is stable. It is not, and it
+  misses in both directions: the aggregate overstatement comes from the May 2023 and September 2026 hikes,
+  where the market priced a further hike far more richly after the move than the entry-day ratio implied, so
+  the re-anchored index was worth more than predicted and the dealer's gain was smaller. At the March and
+  July 2023 hikes the formula understated the gain instead. The errors are large and of both signs, which is
+  why the correlation is near zero rather than merely weak. Report `F_adj` as fair value for CUT and as an
+  upper bound for HIKE.
 
 What remains after the correction is belief change, not construction. In this sample cuts kept arriving later
 than priced, which is a fact about 2023 to 2026 and not a property of the contract.
@@ -150,8 +156,10 @@ than priced, which is a fact about 2023 to 2026 and not a property of the contra
 ## 4. Continuity
 
 `I` is continuous in `t` on any interval containing no rate change, because `w` moves continuously and the two
-contract prices move continuously. At a meeting that changes the range, `I` jumps, because the strike changes
-by one notch. There is no jump at a meeting that holds.
+contract prices move continuously. It stays continuous at a bracket roll too, where `w` jumps from 0 to 1 as
+the ninety-day point passes a meeting: on either side of that jump all the weight sits on the same meeting, so
+`I` does not move. At a meeting that changes the range, `I` jumps, because the strike changes by one notch.
+There is no jump at a meeting that holds.
 
 This is the formal content of decision 004. The jumps are a property of a constant-maturity index measured
 against a moving reference rate, they are where the hedge fails (section 3), and they are where the product's
